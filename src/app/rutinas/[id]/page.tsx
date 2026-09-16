@@ -1,8 +1,26 @@
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  PlayIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/icons";
+import {
+  Badge,
+  Field,
+  Input,
+  MetaLine,
+  Page,
+  PageHeader,
+  Panel,
+  SectionTitle,
+  Select,
+} from "@/components/ui";
+import { IconSubmit, SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
 import { getRoutineGroup } from "@/lib/data/routine-groups";
 import { getRoutine, getRoutineExercises } from "@/lib/data/routines";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   addExerciseToRoutineAction,
@@ -35,206 +53,203 @@ export default async function RoutineDetailPage({
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
   return (
-    <main className="mx-auto max-w-md p-4 pb-28">
-      <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{routine.name}</h1>
-        <Link href="/rutinas" className="text-sm text-neutral-500">
-          Rutinas
-        </Link>
-      </div>
-      {group && (
-        <p className="mb-3 text-xs text-neutral-400">{group.name}</p>
-      )}
+    <Page className="pb-40">
+      <PageHeader
+        title={routine.name}
+        back={{ href: "/rutinas", label: "Rutinas" }}
+        subtitle={
+          <>
+            {group && (
+              <Badge tone="accent" className="mr-2">
+                {group.name}
+              </Badge>
+            )}
+            {routineExercises.length}{" "}
+            {routineExercises.length === 1 ? "ejercicio" : "ejercicios"}
+          </>
+        }
+      />
 
-      <details className="mb-4">
-        <summary className="cursor-pointer text-sm text-neutral-500">
-          Renombrar rutina
-        </summary>
-        <form action={renameRoutineAction} className="mt-2 flex gap-2">
-          <input type="hidden" name="routineId" value={id} />
-          <input
-            type="text"
-            name="name"
-            required
-            defaultValue={routine.name}
-            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium"
-          >
-            Guardar
-          </button>
-        </form>
-      </details>
-
-      <div className="space-y-2">
+      <SectionTitle>Ejercicios</SectionTitle>
+      <ul className="space-y-2">
         {routineExercises.map((re, index) => {
           const exercise = exerciseById.get(re.exercise_id);
           if (!exercise) return null;
+
+          const reps =
+            re.target_reps_min && re.target_reps_max
+              ? re.target_reps_min === re.target_reps_max
+                ? `${re.target_reps_min}`
+                : `${re.target_reps_min}–${re.target_reps_max}`
+              : (re.target_reps_min ?? re.target_reps_max ?? null);
+
           return (
-            <div
+            <li
               key={re.id}
-              className="flex items-center justify-between rounded-lg border border-neutral-200 px-4 py-3"
+              className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-4 py-3"
             >
-              <div>
-                <p className="text-sm font-medium">{exercise.name}</p>
-                <p className="text-xs text-neutral-500">
-                  {re.target_sets} × {re.target_reps_min ?? "?"}
-                  {re.target_reps_max && re.target_reps_max !== re.target_reps_min
-                    ? `–${re.target_reps_max}`
-                    : ""}
-                  {re.target_rest_seconds
-                    ? ` · descanso ${re.target_rest_seconds}s`
-                    : ""}
-                </p>
+              <span className="w-5 shrink-0 text-[13px] tabular-nums text-faint">
+                {index + 1}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{exercise.name}</p>
+                <MetaLine
+                  className="mt-0.5"
+                  items={[
+                    reps ? `${re.target_sets} × ${reps}` : `${re.target_sets} series`,
+                    re.target_rest_seconds
+                      ? `${re.target_rest_seconds} s`
+                      : null,
+                    exercise.muscle_group,
+                  ]}
+                />
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex shrink-0 items-center">
                 <form action={moveRoutineExerciseAction}>
                   <input type="hidden" name="routineId" value={id} />
                   <input type="hidden" name="routineExerciseId" value={re.id} />
                   <input type="hidden" name="direction" value="up" />
-                  <button
-                    type="submit"
-                    disabled={index === 0}
-                    className="text-xs text-neutral-400 disabled:opacity-30"
-                  >
-                    ↑
-                  </button>
+                  <IconSubmit label="Subir" disabled={index === 0}>
+                    <ArrowUpIcon width={15} height={15} />
+                  </IconSubmit>
                 </form>
                 <form action={moveRoutineExerciseAction}>
                   <input type="hidden" name="routineId" value={id} />
                   <input type="hidden" name="routineExerciseId" value={re.id} />
                   <input type="hidden" name="direction" value="down" />
-                  <button
-                    type="submit"
+                  <IconSubmit
+                    label="Bajar"
                     disabled={index === routineExercises.length - 1}
-                    className="text-xs text-neutral-400 disabled:opacity-30"
                   >
-                    ↓
-                  </button>
+                    <ArrowDownIcon width={15} height={15} />
+                  </IconSubmit>
                 </form>
                 <form action={removeRoutineExerciseAction}>
                   <input type="hidden" name="routineId" value={id} />
-                  <input
-                    type="hidden"
-                    name="routineExerciseId"
-                    value={re.id}
-                  />
-                  <button
-                    type="submit"
-                    className="text-xs text-neutral-400 underline"
-                  >
-                    quitar
-                  </button>
+                  <input type="hidden" name="routineExerciseId" value={re.id} />
+                  <IconSubmit label="Quitar de la rutina">
+                    <TrashIcon width={15} height={15} />
+                  </IconSubmit>
                 </form>
               </div>
-            </div>
+            </li>
           );
         })}
 
         {routineExercises.length === 0 && (
-          <p className="text-sm text-neutral-500">
-            Todavía no agregaste ejercicios.
-          </p>
+          <li className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">
+            Agregá el primer ejercicio abajo.
+          </li>
         )}
-      </div>
+      </ul>
 
-      <form
-        action={addExerciseToRoutineAction}
-        className="mt-4 space-y-2 rounded-lg border border-neutral-200 p-3"
-      >
-        <input type="hidden" name="routineId" value={id} />
-        <select
-          name="exerciseId"
-          required
-          defaultValue=""
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        >
-          <option value="" disabled>
-            Elegir ejercicio…
-          </option>
-          {exercises.map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              {ex.muscle_group ? `${ex.muscle_group} — ` : ""}
-              {ex.name}
-            </option>
-          ))}
-        </select>
-
-        <div className="flex gap-2">
-          <label className="flex-1 text-xs text-neutral-500">
-            Series
-            <input
-              type="number"
-              name="targetSets"
-              defaultValue={3}
-              min={1}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-            />
-          </label>
-          <label className="flex-1 text-xs text-neutral-500">
-            Reps min
-            <input
-              type="number"
-              name="targetRepsMin"
-              defaultValue={8}
-              min={1}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-            />
-          </label>
-          <label className="flex-1 text-xs text-neutral-500">
-            Reps max
-            <input
-              type="number"
-              name="targetRepsMax"
-              defaultValue={10}
-              min={1}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-            />
-          </label>
-          <label className="flex-1 text-xs text-neutral-500">
-            Descanso (s)
-            <input
-              type="number"
-              name="targetRestSeconds"
-              defaultValue={90}
-              min={0}
-              step={15}
-              className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-            />
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          className="w-full rounded-md border border-neutral-300 py-2 text-sm font-medium"
-        >
-          Agregar a la rutina
-        </button>
-      </form>
-
-      <form action={deleteRoutineAction} className="mt-3">
-        <input type="hidden" name="routineId" value={id} />
-        <button type="submit" className="text-xs text-neutral-400 underline">
-          Eliminar rutina
-        </button>
-      </form>
-
-      {routineExercises.length > 0 && (
-        <form
-          action={startWorkoutFromRoutineAction}
-          className="fixed inset-x-0 bottom-0 border-t border-neutral-200 bg-white p-4"
-        >
+      {/* Agregar ejercicio */}
+      <Panel className="mt-6 border-dashed bg-transparent">
+        <form action={addExerciseToRoutineAction} className="space-y-3">
           <input type="hidden" name="routineId" value={id} />
-          <button
-            type="submit"
-            className="mx-auto block w-full max-w-md rounded-lg bg-neutral-900 py-3 text-sm font-medium text-white"
+
+          <Field label="Ejercicio">
+            <Select name="exerciseId" required defaultValue="">
+              <option value="" disabled>
+                Elegir…
+              </option>
+              {exercises.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.muscle_group ? `${ex.muscle_group} — ` : ""}
+                  {ex.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Field label="Series">
+              <Input type="number" name="targetSets" defaultValue={3} min={1} />
+            </Field>
+            <Field label="Reps min">
+              <Input type="number" name="targetRepsMin" defaultValue={8} min={1} />
+            </Field>
+            <Field label="Reps max">
+              <Input
+                type="number"
+                name="targetRepsMax"
+                defaultValue={10}
+                min={1}
+              />
+            </Field>
+            <Field label="Descanso">
+              <Input
+                type="number"
+                name="targetRestSeconds"
+                defaultValue={90}
+                min={0}
+                step={15}
+              />
+            </Field>
+          </div>
+
+          <SubmitButton
+            variant="secondary"
+            className="w-full"
+            pendingLabel="Agregando…"
           >
-            🏋️ Empezar entrenamiento
-          </button>
+            <PlusIcon width={16} height={16} />
+            Agregar a la rutina
+          </SubmitButton>
         </form>
+      </Panel>
+
+      {/* Acciones destructivas / secundarias, deliberadamente discretas */}
+      <details className="mt-6">
+        <summary className="cursor-pointer list-none text-[13px] text-faint transition-colors hover:text-muted">
+          Editar rutina
+        </summary>
+        <div className="mt-3 space-y-3">
+          <form action={renameRoutineAction} className="flex gap-2">
+            <input type="hidden" name="routineId" value={id} />
+            <Input
+              type="text"
+              name="name"
+              required
+              defaultValue={routine.name}
+              className="flex-1"
+              aria-label="Nombre de la rutina"
+            />
+            <SubmitButton variant="secondary" pendingLabel="…">
+              Guardar
+            </SubmitButton>
+          </form>
+
+          <form action={deleteRoutineAction}>
+            <input type="hidden" name="routineId" value={id} />
+            <SubmitButton variant="danger" size="sm" pendingLabel="Eliminando…">
+              Eliminar rutina
+            </SubmitButton>
+          </form>
+        </div>
+      </details>
+
+      {/* Se apoya justo encima de la tab bar en móvil; al ras abajo en desktop */}
+      {routineExercises.length > 0 && (
+        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-line bg-canvas/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:px-8 lg:pb-5">
+          <form
+            action={startWorkoutFromRoutineAction}
+            className="mx-auto w-full max-w-xl"
+          >
+            <input type="hidden" name="routineId" value={id} />
+            <SubmitButton
+              size="lg"
+              className="w-full"
+              pendingLabel="Preparando…"
+            >
+              <PlayIcon width={18} height={18} />
+              Empezar entrenamiento
+            </SubmitButton>
+          </form>
+        </div>
       )}
-    </main>
+    </Page>
   );
 }

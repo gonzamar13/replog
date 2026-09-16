@@ -1,145 +1,186 @@
+import { ChevronRightIcon, PlusIcon, RoutinesIcon } from "@/components/icons";
+import {
+  Badge,
+  EmptyState,
+  Field,
+  Input,
+  MetaLine,
+  Page,
+  PageHeader,
+  Panel,
+  SectionTitle,
+  Select,
+} from "@/components/ui";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
-import { listRoutinesGroupedByProgram } from "@/lib/data/routines";
+import {
+  getRoutineStats,
+  listRoutinesGroupedByProgram,
+  type Routine,
+} from "@/lib/data/routines";
 import Link from "next/link";
 import { createRoutineAction, createRoutineGroupAction } from "./actions";
 
-export default async function RutinasPage() {
-  await requireUser();
-  const { groups, ungrouped } = await listRoutinesGroupedByProgram();
+type Stats = Map<string, { exerciseCount: number; avgMinutes: number | null }>;
+
+function RoutineRow({ routine, stats }: { routine: Routine; stats: Stats }) {
+  const stat = stats.get(routine.id);
 
   return (
-    <main className="mx-auto max-w-md p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Rutinas</h1>
-        <Link href="/" className="text-sm text-neutral-500">
-          Inicio
-        </Link>
-      </div>
+    <li>
+      <Link
+        href={`/rutinas/${routine.id}`}
+        className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 transition-colors hover:border-muted/40"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">{routine.name}</p>
+          <MetaLine
+            className="mt-0.5"
+            items={[
+              stat?.exerciseCount
+                ? `${stat.exerciseCount} ${stat.exerciseCount === 1 ? "ejercicio" : "ejercicios"}`
+                : "Sin ejercicios",
+              stat?.avgMinutes ? `${stat.avgMinutes} min` : null,
+            ]}
+          />
+        </div>
+        <ChevronRightIcon className="shrink-0 text-faint" />
+      </Link>
+    </li>
+  );
+}
 
-      {groups.length === 0 && ungrouped.length === 0 && (
-        <p className="text-sm text-neutral-500">
-          Todavía no creaste ninguna rutina.
-        </p>
+export default async function RutinasPage() {
+  await requireUser();
+  const [{ groups, ungrouped }, stats] = await Promise.all([
+    listRoutinesGroupedByProgram(),
+    getRoutineStats(),
+  ]);
+
+  const isEmpty = groups.length === 0 && ungrouped.length === 0;
+
+  return (
+    <Page>
+      <PageHeader
+        title="Rutinas"
+        subtitle="Tus plantillas de entrenamiento, agrupadas por programa."
+      />
+
+      {isEmpty && (
+        <EmptyState
+          icon={<RoutinesIcon width={28} height={28} />}
+          title="Todavía no tenés rutinas"
+          description="Creá una con el formulario de abajo y agregale ejercicios."
+        />
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-7">
         {groups.map(({ group, routines }) => (
           <section key={group.id}>
-            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-400">
+            <SectionTitle
+              action={
+                group.starts_on ? (
+                  <Badge tone="accent">
+                    desde{" "}
+                    {new Date(`${group.starts_on}T00:00:00`).toLocaleDateString(
+                      "es-AR",
+                      { day: "numeric", month: "short" },
+                    )}
+                  </Badge>
+                ) : undefined
+              }
+            >
               {group.name}
-            </h2>
-            <ul className="space-y-2">
-              {routines.map((routine) => (
-                <li key={routine.id}>
-                  <Link
-                    href={`/rutinas/${routine.id}`}
-                    className="block rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium"
-                  >
-                    {routine.name}
-                  </Link>
-                </li>
-              ))}
-              {routines.length === 0 && (
-                <p className="text-xs text-neutral-400">
-                  Sin rutinas todavía.
-                </p>
-              )}
-            </ul>
+            </SectionTitle>
+
+            {routines.length > 0 ? (
+              <ul className="space-y-2">
+                {routines.map((routine) => (
+                  <RoutineRow key={routine.id} routine={routine} stats={stats} />
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-[13px] text-faint">
+                Este programa todavía no tiene rutinas.
+              </p>
+            )}
           </section>
         ))}
 
         {ungrouped.length > 0 && (
           <section>
-            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-400">
-              Sin programa
-            </h2>
+            <SectionTitle>Sin programa</SectionTitle>
             <ul className="space-y-2">
               {ungrouped.map((routine) => (
-                <li key={routine.id}>
-                  <Link
-                    href={`/rutinas/${routine.id}`}
-                    className="block rounded-lg border border-neutral-200 px-4 py-3 text-sm font-medium"
-                  >
-                    {routine.name}
-                  </Link>
-                </li>
+                <RoutineRow key={routine.id} routine={routine} stats={stats} />
               ))}
             </ul>
           </section>
         )}
       </div>
 
-      <form action={createRoutineAction} className="mt-6 flex gap-2">
-        <input
-          type="text"
-          name="name"
-          required
-          placeholder="Nombre de la rutina (ej. Pecho + Tríceps)"
-          className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        />
-        {groups.length > 0 && (
-          <select
-            name="groupId"
-            defaultValue=""
-            className="rounded-md border border-neutral-300 px-2 py-2 text-sm"
-          >
-            <option value="">Sin programa</option>
-            {groups.map(({ group }) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          type="submit"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-        >
-          Crear
-        </button>
-      </form>
+      {/* Crear */}
+      <Panel className="mt-8 border-dashed bg-transparent">
+        <form action={createRoutineAction} className="space-y-3">
+          <Field label="Nueva rutina">
+            <Input
+              type="text"
+              name="name"
+              required
+              placeholder="Ej. Pecho + Tríceps"
+            />
+          </Field>
 
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm text-neutral-500">
-          Crear un programa nuevo
+          {groups.length > 0 && (
+            <Field label="Programa">
+              <Select name="groupId" defaultValue="">
+                <option value="">Sin programa</option>
+                {groups.map(({ group }) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+
+          <SubmitButton className="w-full" pendingLabel="Creando…">
+            <PlusIcon width={16} height={16} />
+            Crear rutina
+          </SubmitButton>
+        </form>
+      </Panel>
+
+      <details className="mt-3 rounded-2xl border border-line bg-surface px-4 py-3">
+        <summary className="cursor-pointer list-none text-sm font-medium text-muted transition-colors hover:text-ink">
+          + Crear un programa
         </summary>
-        <form
-          action={createRoutineGroupAction}
-          className="mt-2 space-y-2 rounded-lg border border-neutral-200 p-3"
-        >
-          <input
-            type="text"
-            name="name"
-            required
-            placeholder="Nombre del programa (ej. Trimestre 1 2026)"
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <div className="flex gap-2">
-            <label className="flex-1 text-xs text-neutral-500">
-              Desde
-              <input
-                type="date"
-                name="startsOn"
-                className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-              />
-            </label>
-            <label className="flex-1 text-xs text-neutral-500">
-              Hasta
-              <input
-                type="date"
-                name="endsOn"
-                className="mt-1 w-full rounded-md border border-neutral-300 px-2 py-2 text-sm"
-              />
-            </label>
+        <form action={createRoutineGroupAction} className="mt-3 space-y-3">
+          <Field label="Nombre">
+            <Input
+              type="text"
+              name="name"
+              required
+              placeholder="Ej. Trimestre 1 2026"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Desde">
+              <Input type="date" name="startsOn" />
+            </Field>
+            <Field label="Hasta">
+              <Input type="date" name="endsOn" />
+            </Field>
           </div>
-          <button
-            type="submit"
-            className="w-full rounded-md border border-neutral-300 py-2 text-sm font-medium"
+          <SubmitButton
+            variant="secondary"
+            className="w-full"
+            pendingLabel="Creando…"
           >
             Crear programa
-          </button>
+          </SubmitButton>
         </form>
       </details>
-    </main>
+    </Page>
   );
 }

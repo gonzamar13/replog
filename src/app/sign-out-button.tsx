@@ -1,12 +1,17 @@
 "use client";
 
+import { LogOutIcon } from "@/components/icons";
+import { Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function SignOutButton() {
   const router = useRouter();
+  const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
+    setPending(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
@@ -14,12 +19,15 @@ export function SignOutButton() {
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={handleSignOut}
-      className="rounded-lg border border-neutral-300 px-4 py-2 text-sm"
+      disabled={pending}
+      className="w-full justify-start"
     >
-      Cerrar sesión
-    </button>
+      <LogOutIcon width={18} height={18} />
+      {pending ? "Cerrando sesión…" : "Cerrar sesión"}
+    </Button>
   );
 }

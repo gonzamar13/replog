@@ -1,5 +1,7 @@
 "use client";
 
+import { Logo } from "@/components/app-nav";
+import { Button, Field, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -62,75 +64,101 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 px-6 py-12">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">RepLog</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            {mode === "signin" ? "Entrá a tu cuenta" : "Creá tu cuenta"}
-          </p>
-        </div>
+    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-6 py-12">
+      <div className="mb-10">
+        <Logo className="text-3xl" />
+        <p className="mt-2 text-sm text-muted">Track. Train. Progress.</p>
+      </div>
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-300 py-3 text-sm font-medium disabled:opacity-50"
-        >
-          Continuar con Google
-        </button>
+      <Button
+        type="button"
+        variant="secondary"
+        size="lg"
+        onClick={handleGoogle}
+        disabled={loading !== null}
+        className="w-full"
+      >
+        {loading === "google" ? "Abriendo Google…" : "Continuar con Google"}
+      </Button>
 
-        <div className="flex items-center gap-3 text-xs text-neutral-400">
-          <div className="h-px flex-1 bg-neutral-200" />
+      <div className="my-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-line" />
+        <span className="text-[11px] uppercase tracking-[0.12em] text-faint">
           o con email
-          <div className="h-px flex-1 bg-neutral-200" />
-        </div>
+        </span>
+        <span className="h-px flex-1 bg-line" />
+      </div>
 
-        <form onSubmit={handleEmailSubmit} className="space-y-3">
-          <input
+      <form onSubmit={handleEmailSubmit} className="space-y-3">
+        <Field label="Email">
+          <Input
             type="email"
             required
-            placeholder="Email"
+            autoComplete="email"
+            placeholder="vos@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm"
           />
-          <input
+        </Field>
+
+        <Field label="Contraseña">
+          <Input
             type="password"
             required
             minLength={6}
-            placeholder="Contraseña"
+            autoComplete={
+              mode === "signin" ? "current-password" : "new-password"
+            }
+            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm"
           />
+        </Field>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {message && <p className="text-sm text-emerald-600">{message}</p>}
-
-          <button
-            type="submit"
-            disabled={loading !== null}
-            className="w-full rounded-lg bg-neutral-900 py-3 text-sm font-medium text-white disabled:opacity-50"
+        {error && (
+          <p
+            role="alert"
+            className="rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] text-danger"
           >
-            {mode === "signin" ? "Entrar" : "Crear cuenta"}
-          </button>
-        </form>
+            {error}
+          </p>
+        )}
+        {message && (
+          <p
+            role="status"
+            className="rounded-xl border border-accent/30 bg-accent/10 px-3 py-2 text-[13px] text-accent"
+          >
+            {message}
+          </p>
+        )}
 
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setMessage(null);
-            setMode(mode === "signin" ? "signup" : "signin");
-          }}
-          className="w-full text-center text-sm text-neutral-500"
+        <Button
+          type="submit"
+          size="lg"
+          disabled={loading !== null}
+          className="w-full"
         >
-          {mode === "signin"
-            ? "¿No tenés cuenta? Creála"
-            : "¿Ya tenés cuenta? Entrá"}
-        </button>
-      </div>
+          {loading === "email"
+            ? "Entrando…"
+            : mode === "signin"
+              ? "Entrar"
+              : "Crear cuenta"}
+        </Button>
+      </form>
+
+      <button
+        type="button"
+        onClick={() => {
+          setError(null);
+          setMessage(null);
+          setMode(mode === "signin" ? "signup" : "signin");
+        }}
+        className="mt-6 text-center text-[13px] text-faint transition-colors hover:text-muted"
+      >
+        {mode === "signin"
+          ? "¿No tenés cuenta? Creála"
+          : "¿Ya tenés cuenta? Entrá"}
+      </button>
     </main>
   );
 }

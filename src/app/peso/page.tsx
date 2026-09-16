@@ -1,8 +1,28 @@
+import { ScaleIcon } from "@/components/icons";
+import {
+  Badge,
+  EmptyState,
+  Field,
+  Input,
+  Page,
+  PageHeader,
+  Panel,
+  SectionTitle,
+  StatTile,
+} from "@/components/ui";
+import { LineChart } from "@/components/ui/chart";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listBodyWeightLogs } from "@/lib/data/body-weight";
 import { getCurrentProfile } from "@/lib/data/profiles";
-import Link from "next/link";
 import { createBodyWeightLogAction } from "./actions";
+
+function formatDate(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 export default async function PesoPage() {
   await requireUser();
@@ -10,66 +30,114 @@ export default async function PesoPage() {
     listBodyWeightLogs(),
     getCurrentProfile(),
   ]);
+
   const unit = profile?.unit_pref ?? "kg";
   const today = new Date().toISOString().slice(0, 10);
 
+  const latest = logs[0] ?? null;
+  const previous = logs[1] ?? null;
+  const delta =
+    latest && previous
+      ? Math.round((latest.weight - previous.weight) * 10) / 10
+      : null;
+
+  // El gráfico va del más viejo al más nuevo; la lista al revés.
+  const chartPoints = [...logs]
+    .slice(0, 20)
+    .reverse()
+    .map((log) => ({ label: formatDate(log.logged_at), value: log.weight }));
+
   return (
-    <main className="mx-auto max-w-md p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Peso corporal</h1>
-        <Link href="/" className="text-sm text-neutral-500">
-          Inicio
-        </Link>
-      </div>
+    <Page>
+      <PageHeader
+        title="Peso corporal"
+        back={{ href: "/perfil", label: "Perfil" }}
+      />
 
-      <form action={createBodyWeightLogAction} className="mb-6 flex gap-2">
-        <input
-          type="number"
-          name="weight"
-          step="0.1"
-          required
-          placeholder={`Peso (${unit})`}
-          className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+      <Panel className="mb-6 border-dashed bg-transparent">
+        <form action={createBodyWeightLogAction} className="flex items-end gap-2">
+          <Field label={`Peso (${unit})`} className="flex-1">
+            <Input
+              type="number"
+              name="weight"
+              step="0.1"
+              min="0"
+              required
+              inputMode="decimal"
+              placeholder={latest ? String(latest.weight) : "0.0"}
+              className="text-lg font-semibold tabular-nums"
+            />
+          </Field>
+          <Field label="Fecha" className="flex-1">
+            <Input type="date" name="loggedAt" defaultValue={today} />
+          </Field>
+          <SubmitButton pendingLabel="…">Guardar</SubmitButton>
+        </form>
+      </Panel>
+
+      {logs.length === 0 ? (
+        <EmptyState
+          icon={<ScaleIcon width={28} height={28} />}
+          title="Sin registros"
+          description="Anotá tu peso cada tanto para ver la tendencia."
         />
-        <input
-          type="date"
-          name="loggedAt"
-          defaultValue={today}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-        >
-          Guardar
-        </button>
-      </form>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <StatTile label="Actual" value={latest!.weight} unit={unit} accent />
+            <StatTile
+              label="Cambio"
+              value={delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta}`}
+              unit={delta === null ? undefined : unit}
+            />
+          </div>
 
-      {logs.length === 0 && (
-        <p className="text-sm text-neutral-500">
-          Todavía no registraste tu peso.
-        </p>
-      )}
+          {chartPoints.length > 1 && (
+            <Panel className="mt-3">
+              <p className="mb-1 text-[11px] uppercase tracking-[0.1em] text-faint">
+                Evolución
+              </p>
+              <LineChart points={chartPoints} unit={unit} />
+            </Panel>
+          )}
 
-      <ul className="space-y-1">
-        {logs.map((log) => (
-          <li
-            key={log.id}
-            className="flex items-center justify-between rounded-md border border-neutral-200 px-3 py-2 text-sm"
-          >
-            <span>
-              {new Date(`${log.logged_at}T00:00:00`).toLocaleDateString("es-AR", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
+          <section className="mt-8">
+            <SectionTitle>Registros</SectionTitle>
+            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+              {logs.map((log, index) => {
+                const prev = logs[index + 1];
+                const diff = prev
+                  ? Math.round((log.weight - prev.weight) * 10) / 10
+                  : null;
+
+                return (
+                  <li
+                    key={log.id}
+                    className="flex items-center gap-3 px-4 py-2.5"
+                  >
+                    <span className="flex-1 text-sm text-muted">
+                      {formatDate(log.logged_at)}
+                    </span>
+                    {diff !== null && diff !== 0 && (
+                      <Badge tone={diff > 0 ? "neutral" : "accent"}>
+                        {diff > 0 ? "+" : ""}
+                        {diff}
+                      </Badge>
+                    )}
+                    <span className="text-[15px] font-semibold tabular-nums">
+                      {log.weight}
+                      <span className="text-[13px] font-medium text-muted">
+                        {" "}
+                        {unit}
+                      </span>
+                    </span>
+                  </li>
+                );
               })}
-            </span>
-            <span className="font-medium">
-              {log.weight} {unit}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </main>
+            </ul>
+          </section>
+        </>
+      )}
+    </Page>
   );
 }

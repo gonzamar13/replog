@@ -1,29 +1,32 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { AppNav } from "@/components/app-nav";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "RepLog",
-  description: "Tracker de entrenamientos — registrá una serie en dos toques.",
+  description: "Track. Train. Progress.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B0E0D",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="es" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-dvh bg-canvas text-ink">
+        <div className="lg:flex">
+          <AppNav />
+          <div className="min-w-0 flex-1">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }

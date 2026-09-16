@@ -179,18 +179,29 @@ export async function getExerciseHistory(exerciseId: string) {
 
   return workouts.map((w) => {
     const workoutSets = setsByWorkout.get(w.id) ?? [];
-    const maxWeight = workoutSets.reduce(
-      (max, s) => (s.weight != null && s.weight > max ? s.weight : max),
-      0,
-    );
     const volume = workoutSets.reduce(
       (sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0),
       0,
     );
+
+    // La serie más pesada de esa sesión: con ella se muestra el peso
+    // máximo y se estima el 1RM (Epley), que es solo una lectura
+    // derivada — no se guarda nada.
+    let best: { weight: number; reps: number | null } | null = null;
+    for (const s of workoutSets) {
+      if (s.weight == null) continue;
+      if (!best || s.weight > best.weight) best = { weight: s.weight, reps: s.reps };
+    }
+
     return {
       workoutId: w.id,
       date: w.started_at,
-      maxWeight,
+      maxWeight: best?.weight ?? 0,
+      bestReps: best?.reps ?? null,
+      estimated1RM:
+        best && best.reps
+          ? Math.round(best.weight * (1 + best.reps / 30))
+          : null,
       volume,
       setCount: workoutSets.length,
     };

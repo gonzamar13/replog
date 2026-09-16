@@ -1,3 +1,17 @@
+import { ProgressIcon, TrophyIcon } from "@/components/icons";
+import {
+  Badge,
+  EmptyState,
+  MetaLine,
+  Page,
+  PageHeader,
+  Panel,
+  SectionTitle,
+  Select,
+  StatTile,
+} from "@/components/ui";
+import { LineChart } from "@/components/ui/chart";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
 import { getExerciseHistory } from "@/lib/data/progress";
@@ -13,20 +27,40 @@ export default async function ProgresoPage({
   const exercises = await listExercises();
   const history = exerciseId ? await getExerciseHistory(exerciseId) : [];
 
-  return (
-    <main className="mx-auto max-w-md p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Progreso</h1>
-        <Link href="/" className="text-sm text-neutral-500">
-          Inicio
-        </Link>
-      </div>
+  const exercise = exerciseId
+    ? exercises.find((e) => e.id === exerciseId)
+    : null;
 
-      <form method="get" className="mb-4 flex gap-2">
-        <select
+  const best = history.reduce(
+    (max, h) => (h.maxWeight > max ? h.maxWeight : max),
+    0,
+  );
+  const latest = history[history.length - 1] ?? null;
+  const first = history[0] ?? null;
+  const delta = latest && first ? latest.maxWeight - first.maxWeight : 0;
+
+  return (
+    <Page>
+      <PageHeader
+        title="Progreso"
+        subtitle="Elegí un ejercicio para ver su evolución."
+        action={
+          <Link
+            href="/records"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-2 text-[13px] font-medium text-muted transition-colors hover:text-ink"
+          >
+            <TrophyIcon width={16} height={16} />
+            Récords
+          </Link>
+        }
+      />
+
+      <form method="get" className="mb-6 flex gap-2">
+        <Select
           name="exercise"
           defaultValue={exerciseId ?? ""}
-          className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="flex-1"
+          aria-label="Ejercicio"
         >
           <option value="" disabled>
             Elegir ejercicio…
@@ -37,50 +71,112 @@ export default async function ProgresoPage({
               {ex.name}
             </option>
           ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium"
-        >
-          Ver
-        </button>
+        </Select>
+        <SubmitButton variant="secondary">Ver</SubmitButton>
       </form>
 
-      {exerciseId && history.length === 0 && (
-        <p className="text-sm text-neutral-500">
-          Todavía no hay sesiones finalizadas con este ejercicio.
-        </p>
+      {!exerciseId && (
+        <EmptyState
+          icon={<ProgressIcon width={28} height={28} />}
+          title="Elegí un ejercicio"
+          description="Vas a ver cómo evolucionó el peso sesión a sesión."
+        />
       )}
 
-      {history.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-neutral-400">
-                <th className="py-1 font-medium">Fecha</th>
-                <th className="py-1 font-medium">Peso máx.</th>
-                <th className="py-1 font-medium">Volumen</th>
-                <th className="py-1 font-medium">Series</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((h) => (
-                <tr key={h.workoutId} className="border-t border-neutral-100">
-                  <td className="py-1.5">
-                    {new Date(h.date).toLocaleDateString("es-AR", {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                  </td>
-                  <td className="py-1.5">{h.maxWeight}kg</td>
-                  <td className="py-1.5">{h.volume}kg</td>
-                  <td className="py-1.5">{h.setCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {exerciseId && history.length === 0 && (
+        <EmptyState
+          icon={<ProgressIcon width={28} height={28} />}
+          title="Sin datos todavía"
+          description="Este ejercicio no aparece en ninguna sesión terminada."
+        />
       )}
-    </main>
+
+      {history.length > 0 && exercise && (
+        <>
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {exercise.name}
+            </h2>
+            {delta !== 0 && (
+              <Badge tone={delta > 0 ? "accent" : "neutral"}>
+                {delta > 0 ? "+" : ""}
+                {delta} kg
+              </Badge>
+            )}
+          </div>
+
+          {/* Una sola gráfica principal: peso máximo por sesión */}
+          <Panel>
+            <p className="mb-1 text-[11px] uppercase tracking-[0.1em] text-faint">
+              Peso máximo por sesión
+            </p>
+            <LineChart
+              unit="kg"
+              points={history.map((h) => ({
+                label: new Date(h.date).toLocaleDateString("es-AR", {
+                  day: "numeric",
+                  month: "short",
+                }),
+                value: h.maxWeight,
+              }))}
+            />
+          </Panel>
+
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <StatTile label="Máximo" value={best} unit="kg" accent />
+            <StatTile
+              label="1RM est."
+              value={latest?.estimated1RM ?? "—"}
+              unit={latest?.estimated1RM ? "kg" : undefined}
+            />
+            <StatTile label="Sesiones" value={history.length} />
+          </div>
+
+          <section className="mt-8">
+            <SectionTitle>Sesión a sesión</SectionTitle>
+            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+              {[...history].reverse().map((h) => (
+                <li key={h.workoutId}>
+                  <Link
+                    href={`/workout/${h.workoutId}`}
+                    className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-elevated"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        {new Date(h.date).toLocaleDateString("es-AR", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </p>
+                      <MetaLine
+                        className="mt-0.5"
+                        items={[
+                          `${h.setCount} series`,
+                          `${h.volume.toLocaleString("es-AR")} kg vol.`,
+                        ]}
+                      />
+                    </div>
+                    <p className="shrink-0 text-[15px] font-bold tabular-nums">
+                      {h.maxWeight}
+                      <span className="text-[13px] font-medium text-muted">
+                        {" "}
+                        kg
+                      </span>
+                      {h.bestReps && (
+                        <>
+                          <span className="mx-1 text-faint">×</span>
+                          {h.bestReps}
+                        </>
+                      )}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
+    </Page>
   );
 }

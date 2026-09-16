@@ -1,3 +1,14 @@
+import { PlusIcon } from "@/components/icons";
+import {
+  Badge,
+  Field,
+  Input,
+  Page,
+  PageHeader,
+  Panel,
+  SectionTitle,
+} from "@/components/ui";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
 import Link from "next/link";
@@ -15,63 +26,76 @@ export default async function EjerciciosPage() {
     groups.set(key, list);
   }
 
-  return (
-    <main className="mx-auto max-w-md p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Ejercicios</h1>
-        <Link href="/" className="text-sm text-neutral-500">
-          Inicio
-        </Link>
-      </div>
+  const customCount = exercises.filter((e) => e.is_custom).length;
 
-      <div className="space-y-4">
-        {Array.from(groups.entries()).map(([muscleGroup, items]) => (
+  return (
+    <Page>
+      <PageHeader
+        title="Ejercicios"
+        back={{ href: "/perfil", label: "Perfil" }}
+        subtitle={`${exercises.length} disponibles${
+          customCount ? ` · ${customCount} tuyos` : ""
+        }`}
+      />
+
+      <Panel className="mb-8 border-dashed bg-transparent">
+        <form action={createExerciseAction} className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Nombre">
+              <Input
+                type="text"
+                name="name"
+                required
+                placeholder="Ej. Press Arnold"
+              />
+            </Field>
+            <Field label="Grupo muscular">
+              <Input
+                type="text"
+                name="muscleGroup"
+                placeholder="Opcional — ej. Hombros"
+                list="muscle-groups"
+              />
+              <datalist id="muscle-groups">
+                {[...groups.keys()].map((g) => (
+                  <option key={g} value={g} />
+                ))}
+              </datalist>
+            </Field>
+          </div>
+          <SubmitButton
+            variant="secondary"
+            className="w-full"
+            pendingLabel="Creando…"
+          >
+            <PlusIcon width={16} height={16} />
+            Crear ejercicio
+          </SubmitButton>
+        </form>
+      </Panel>
+
+      <div className="space-y-6">
+        {[...groups.entries()].map(([muscleGroup, items]) => (
           <section key={muscleGroup}>
-            <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-400">
-              {muscleGroup}
-            </h2>
-            <ul className="space-y-1">
+            <SectionTitle>{muscleGroup}</SectionTitle>
+            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
               {items.map((exercise) => (
-                <li
-                  key={exercise.id}
-                  className="flex items-center justify-between rounded-md border border-neutral-200 px-3 py-2 text-sm"
-                >
-                  {exercise.name}
-                  {exercise.is_custom && (
-                    <span className="text-xs text-neutral-400">tuyo</span>
-                  )}
+                <li key={exercise.id}>
+                  <Link
+                    href={`/progreso?exercise=${exercise.id}`}
+                    className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-elevated"
+                  >
+                    <span className="flex-1 truncate text-sm">
+                      {exercise.name}
+                    </span>
+                    {exercise.is_custom && <Badge tone="accent">tuyo</Badge>}
+                  </Link>
                 </li>
               ))}
             </ul>
           </section>
         ))}
       </div>
-
-      <form
-        action={createExerciseAction}
-        className="mt-6 space-y-2 rounded-lg border border-neutral-200 p-3"
-      >
-        <p className="text-sm font-medium">Crear ejercicio</p>
-        <input
-          type="text"
-          name="name"
-          required
-          placeholder="Nombre (ej. Press Arnold)"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        />
-        <input
-          type="text"
-          name="muscleGroup"
-          placeholder="Grupo muscular (opcional)"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="w-full rounded-md border border-neutral-300 py-2 text-sm font-medium"
-        >
-          Agregar
-        </button>
-      </form>
-    </main>
+    </Page>
   );
 }

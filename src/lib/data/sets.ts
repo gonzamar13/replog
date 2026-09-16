@@ -10,6 +10,7 @@ export async function createSet(input: {
   weight: number | null;
   reps: number | null;
   isFailure: boolean;
+  note?: string | null;
 }) {
   const supabase = await createClient();
 
@@ -24,6 +25,7 @@ export async function createSet(input: {
     weight: input.weight,
     reps: input.reps,
     is_failure: input.isFailure,
+    note: input.note ?? null,
   });
 
   if (error) throw error;

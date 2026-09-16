@@ -41,6 +41,7 @@ export async function logSetAction(formData: FormData) {
     weight: weightRaw ? Number(weightRaw) : null,
     reps: repsRaw ? Number(repsRaw) : null,
     isFailure: formData.get("isFailure") === "on",
+    note: (formData.get("note") as string)?.trim() || null,
   });
 
   revalidatePath(`/workout/${workoutId}`);

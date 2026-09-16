@@ -216,6 +216,66 @@ export async function getWorkoutSummary(workoutId: string) {
   };
 }
 
+// Historial con volumen, series y ejercicios por sesión. Se resuelve en
+// 3 consultas en lote (no una por fila) y se agrega en memoria.
+export async function listFinishedWorkoutsWithSummary() {
+  const supabase = await createClient();
+
+  const workouts = await listFinishedWorkouts();
+  if (workouts.length === 0) return [];
+
+  const workoutIds = workouts.map((w) => w.id);
+  const { data: workoutExercises } = await supabase
+    .from("workout_exercises")
+    .select("id, workout_id")
+    .in("workout_id", workoutIds);
+
+  const weIds = (workoutExercises ?? []).map((we) => we.id);
+  const { data: sets } = weIds.length
+    ? await supabase
+        .from("sets")
+        .select("workout_exercise_id, weight, reps")
+        .in("workout_exercise_id", weIds)
+    : { data: [] };
+
+  const workoutByWE = new Map(
+    (workoutExercises ?? []).map((we) => [we.id, we.workout_id]),
+  );
+
+  const volume = new Map<string, number>();
+  const setCount = new Map<string, number>();
+  for (const s of sets ?? []) {
+    const workoutId = workoutByWE.get(s.workout_exercise_id);
+    if (!workoutId) continue;
+    volume.set(
+      workoutId,
+      (volume.get(workoutId) ?? 0) + (s.weight ?? 0) * (s.reps ?? 0),
+    );
+    setCount.set(workoutId, (setCount.get(workoutId) ?? 0) + 1);
+  }
+
+  const exerciseCount = new Map<string, number>();
+  for (const we of workoutExercises ?? []) {
+    exerciseCount.set(
+      we.workout_id,
+      (exerciseCount.get(we.workout_id) ?? 0) + 1,
+    );
+  }
+
+  return workouts.map((w) => ({
+    ...w,
+    volume: volume.get(w.id) ?? 0,
+    setCount: setCount.get(w.id) ?? 0,
+    exerciseCount: exerciseCount.get(w.id) ?? 0,
+    durationMinutes: w.ended_at
+      ? Math.round(
+          (new Date(w.ended_at).getTime() - new Date(w.started_at).getTime()) /
+            60000,
+        )
+      : null,
+  }));
+}
+
 export async function listFinishedWorkouts() {
   const supabase = await createClient();
   const { data } = await supabase

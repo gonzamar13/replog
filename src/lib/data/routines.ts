@@ -55,6 +55,61 @@ export async function listRoutinesGroupedByProgram() {
   };
 }
 
+// Cuántos ejercicios tiene cada rutina y cuánto duró en promedio en la
+// vida real. La duración no está guardada en ningún lado: se deriva de
+// las sesiones ya finalizadas que usaron esa rutina.
+export async function getRoutineStats() {
+  const supabase = await createClient();
+
+  const [{ data: routineExercises }, { data: workouts }] = await Promise.all([
+    supabase.from("routine_exercises").select("routine_id"),
+    supabase
+      .from("workouts")
+      .select("routine_id, started_at, ended_at")
+      .not("routine_id", "is", null)
+      .not("ended_at", "is", null)
+      .order("started_at", { ascending: false })
+      .limit(120),
+  ]);
+
+  const exerciseCount = new Map<string, number>();
+  for (const re of routineExercises ?? []) {
+    exerciseCount.set(re.routine_id, (exerciseCount.get(re.routine_id) ?? 0) + 1);
+  }
+
+  const durations = new Map<string, number[]>();
+  for (const w of workouts ?? []) {
+    if (!w.routine_id || !w.ended_at) continue;
+    const minutes = Math.round(
+      (new Date(w.ended_at).getTime() - new Date(w.started_at).getTime()) / 60000,
+    );
+    if (minutes <= 0) continue;
+    const list = durations.get(w.routine_id) ?? [];
+    list.push(minutes);
+    durations.set(w.routine_id, list);
+  }
+
+  const stats = new Map<
+    string,
+    { exerciseCount: number; avgMinutes: number | null }
+  >();
+
+  for (const routineId of new Set([
+    ...exerciseCount.keys(),
+    ...durations.keys(),
+  ])) {
+    const list = durations.get(routineId) ?? [];
+    stats.set(routineId, {
+      exerciseCount: exerciseCount.get(routineId) ?? 0,
+      avgMinutes: list.length
+        ? Math.round(list.reduce((a, b) => a + b, 0) / list.length)
+        : null,
+    });
+  }
+
+  return stats;
+}
+
 export async function getRoutine(routineId: string) {
   const supabase = await createClient();
   const { data } = await supabase
