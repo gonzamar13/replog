@@ -16,7 +16,6 @@ import { Sparkbars } from "@/components/ui/chart";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { formatDays, todayIso } from "@/lib/days";
-import { listExercises } from "@/lib/data/exercises";
 import { getHomeSummary } from "@/lib/data/home";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getPersonalRecords } from "@/lib/data/progress";
@@ -29,20 +28,20 @@ import { startWorkoutAction } from "./workout/actions";
 export default async function Home() {
   const user = await requireUser();
 
-  const [profile, activeWorkout, summary, routines, exercises, records] =
+  // Todo en paralelo: getRoutineStats estaba con un await suelto después
+  // del Promise.all y sumaba un viaje de red en serie.
+  const [profile, activeWorkout, summary, routines, records, routineStats] =
     await Promise.all([
       getCurrentProfile(),
       getActiveWorkout(),
       getHomeSummary(),
       listRoutines(),
-      listExercises(),
       getPersonalRecords(),
+      getRoutineStats(),
     ]);
-  const routineStats = await getRoutineStats();
 
   const name = profile?.display_name || user.email?.split("@")[0] || "";
   const routineById = new Map(routines.map((r) => [r.id, r]));
-  const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
   const last = summary.lastWorkout;
   const lastRoutine = last?.routineId ? routineById.get(last.routineId) : null;
@@ -52,9 +51,6 @@ export default async function Home() {
   const todayRoutine =
     routines.find((r) => (r.days ?? []).includes(today)) ?? null;
   const suggested = todayRoutine ?? lastRoutine ?? routines[0] ?? null;
-  const topSetExercise = summary.topSet
-    ? exerciseById.get(summary.topSet.exerciseId)
-    : null;
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 pt-6 pb-28 lg:max-w-5xl lg:px-8 lg:pt-10 lg:pb-14">
@@ -193,7 +189,7 @@ export default async function Home() {
                   ]}
                 />
 
-                {summary.topSet && topSetExercise && (
+                {summary.topSet?.exerciseName && (
                   <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
                     <ArrowUpIcon
                       width={16}
@@ -201,7 +197,7 @@ export default async function Home() {
                       className="shrink-0 text-accent"
                     />
                     <span className="min-w-0 flex-1 truncate text-[13px] text-muted">
-                      {topSetExercise.name}
+                      {summary.topSet.exerciseName}
                     </span>
                     <span className="text-[15px] font-bold tabular-nums">
                       {summary.topSet.weight}

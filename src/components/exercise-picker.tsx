@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, XIcon } from "@/components/icons";
+import { ChevronRightIcon, PlusIcon, XIcon } from "@/components/icons";
 import { Badge, cn, Field, Input } from "@/components/ui";
 import type { Exercise } from "@/lib/data/exercises";
 import { useState } from "react";
@@ -79,9 +79,13 @@ function TargetFields() {
 function ResultList({
   groups,
   query,
+  submitName,
+  mode,
 }: {
   groups: Map<string, Exercise[]>;
   query: string;
+  submitName: string;
+  mode: "add" | "select";
 }) {
   const { pending } = useFormStatus();
   const total = [...groups.values()].reduce((sum, list) => sum + list.length, 0);
@@ -112,18 +116,27 @@ function ResultList({
                 {/* El propio ítem envía el form: un toque = agregado */}
                 <button
                   type="submit"
-                  name="exerciseId"
+                  name={submitName}
                   value={exercise.id}
                   disabled={pending}
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-elevated"
                 >
-                  <PlusIcon
-                    width={15}
-                    height={15}
-                    className="shrink-0 text-faint"
-                  />
+                  {mode === "add" ? (
+                    <PlusIcon
+                      width={15}
+                      height={15}
+                      className="shrink-0 text-faint"
+                    />
+                  ) : null}
                   <span className="flex-1 truncate">{exercise.name}</span>
                   {exercise.is_custom && <Badge tone="accent">tuyo</Badge>}
+                  {mode === "select" ? (
+                    <ChevronRightIcon
+                      width={15}
+                      height={15}
+                      className="shrink-0 text-faint"
+                    />
+                  ) : null}
                 </button>
               </li>
             ))}
@@ -137,13 +150,21 @@ function ResultList({
 export function ExercisePicker({
   exercises,
   action,
-  hiddenFields,
+  method,
+  hiddenFields = {},
   withTarget = false,
+  submitName = "exerciseId",
+  mode = "add",
 }: {
   exercises: Exercise[];
-  action: (formData: FormData) => void | Promise<void>;
-  hiddenFields: Record<string, string>;
+  /** Server Action para agregar. En modo "select" se omite y el form
+   *  navega por GET con el id del ejercicio en la query. */
+  action?: (formData: FormData) => void | Promise<void>;
+  method?: "get";
+  hiddenFields?: Record<string, string>;
   withTarget?: boolean;
+  submitName?: string;
+  mode?: "add" | "select";
 }) {
   const [query, setQuery] = useState("");
 
@@ -163,7 +184,7 @@ export function ExercisePicker({
   }
 
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} method={method} className="space-y-3">
       {Object.entries(hiddenFields).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
@@ -193,7 +214,12 @@ export function ExercisePicker({
         )}
       </div>
 
-      <ResultList groups={groups} query={query.trim()} />
+      <ResultList
+        groups={groups}
+        query={query.trim()}
+        submitName={submitName}
+        mode={mode}
+      />
     </form>
   );
 }

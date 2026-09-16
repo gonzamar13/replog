@@ -7,11 +7,10 @@ import {
   PageHeader,
   Panel,
   SectionTitle,
-  Select,
   StatTile,
 } from "@/components/ui";
+import { ExercisePicker } from "@/components/exercise-picker";
 import { LineChart } from "@/components/ui/chart";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
 import { getExerciseHistory } from "@/lib/data/progress";
@@ -55,25 +54,14 @@ export default async function ProgresoPage({
         }
       />
 
-      <form method="get" className="mb-6 flex gap-2">
-        <Select
-          name="exercise"
-          defaultValue={exerciseId ?? ""}
-          className="flex-1"
-          aria-label="Ejercicio"
-        >
-          <option value="" disabled>
-            Elegir ejercicio…
-          </option>
-          {exercises.map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              {ex.muscle_group ? `${ex.muscle_group} — ` : ""}
-              {ex.name}
-            </option>
-          ))}
-        </Select>
-        <SubmitButton variant="secondary">Ver</SubmitButton>
-      </form>
+      <div className="mb-6">
+        <ExercisePicker
+          exercises={exercises}
+          method="get"
+          submitName="exercise"
+          mode="select"
+        />
+      </div>
 
       {!exerciseId && (
         <EmptyState

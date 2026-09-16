@@ -27,7 +27,11 @@ export async function getHomeSummary() {
       recentVolumes: [] as number[],
       totalWorkouts: 0,
       volume30d: 0,
-      topSet: null as { exerciseId: string; weight: number; reps: number | null } | null,
+      topSet: null as {
+        exerciseName: string | null;
+        weight: number;
+        reps: number | null;
+      } | null,
     };
   }
 
@@ -79,6 +83,18 @@ export async function getHomeSummary() {
     }
   }
 
+  // El nombre del ejercicio de la serie top se resuelve con una consulta
+  // puntual: antes la home traía el catálogo entero solo para esto.
+  let topSetExerciseName: string | null = null;
+  if (topSet) {
+    const { data } = await supabase
+      .from("exercises")
+      .select("name")
+      .eq("id", topSet.exerciseId)
+      .maybeSingle();
+    topSetExerciseName = data?.name ?? null;
+  }
+
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const volume30d = workouts
     .filter((w) => new Date(w.started_at).getTime() >= thirtyDaysAgo)
@@ -112,6 +128,12 @@ export async function getHomeSummary() {
       .map((w) => volumeByWorkout.get(w.id) ?? 0),
     totalWorkouts: totalWorkouts ?? workouts.length,
     volume30d,
-    topSet,
+    topSet: topSet
+      ? {
+          exerciseName: topSetExerciseName,
+          weight: topSet.weight,
+          reps: topSet.reps,
+        }
+      : null,
   };
 }

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -22,9 +23,7 @@ export async function createBodyWeightLog(input: {
   loggedAt: string | null;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 
   const { error } = await supabase.from("body_weight_logs").insert({

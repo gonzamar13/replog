@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 // Capa de datos ("services" en otros stacks): funciones de servidor que
@@ -11,9 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentProfile() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) return null;
 
@@ -39,9 +38,7 @@ export async function updateProfile(input: {
   unitPref: "kg" | "lb";
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 
   const { error } = await supabase

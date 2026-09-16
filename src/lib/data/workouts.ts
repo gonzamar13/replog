@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -66,9 +67,7 @@ async function reuseActiveOrCreate(create: () => Promise<string>) {
 export async function createWorkout() {
   return reuseActiveOrCreate(async () => {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("No autenticado");
 
     const { data, error } = await supabase
@@ -106,9 +105,7 @@ async function copyExercisesInto(
 export async function createWorkoutFromRoutine(routineId: string) {
   return reuseActiveOrCreate(async () => {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("No autenticado");
 
     const { data: routineExercises, error: routineError } = await supabase
@@ -137,9 +134,7 @@ export async function createWorkoutFromRoutine(routineId: string) {
 export async function repeatWorkout(sourceWorkoutId: string) {
   return reuseActiveOrCreate(async () => {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) throw new Error("No autenticado");
 
     const { data: source } = await supabase

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { WorkoutSet } from "@/lib/data/sets";
@@ -23,9 +24,7 @@ export async function createExercise(input: {
   muscleGroup: string | null;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) throw new Error("No autenticado");
 
   const { error } = await supabase.from("exercises").insert({
