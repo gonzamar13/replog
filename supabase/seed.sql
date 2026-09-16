@@ -1,0 +1,40 @@
+-- RepLog — catálogo global de ejercicios predefinidos
+-- Correr después de schema.sql, una sola vez. owner_id queda null a
+-- propósito: eso es lo que los hace visibles para todos los usuarios
+-- (ver policy "exercises: select global or own").
+
+insert into public.exercises (name, muscle_group, is_custom) values
+  ('Press banca', 'Pecho', false),
+  ('Press banca inclinado', 'Pecho', false),
+  ('Press banca con mancuernas', 'Pecho', false),
+  ('Aperturas con mancuernas', 'Pecho', false),
+  ('Fondos en paralelas', 'Pecho', false),
+  ('Press militar', 'Hombros', false),
+  ('Press militar con mancuernas', 'Hombros', false),
+  ('Elevaciones laterales', 'Hombros', false),
+  ('Elevaciones frontales', 'Hombros', false),
+  ('Pájaros (elevaciones posteriores)', 'Hombros', false),
+  ('Dominadas', 'Espalda', false),
+  ('Remo con barra', 'Espalda', false),
+  ('Remo con mancuerna', 'Espalda', false),
+  ('Jalón al pecho', 'Espalda', false),
+  ('Remo en polea baja', 'Espalda', false),
+  ('Peso muerto', 'Espalda', false),
+  ('Sentadilla', 'Piernas', false),
+  ('Sentadilla frontal', 'Piernas', false),
+  ('Prensa de piernas', 'Piernas', false),
+  ('Zancadas', 'Piernas', false),
+  ('Peso muerto rumano', 'Piernas', false),
+  ('Extensión de cuádriceps', 'Piernas', false),
+  ('Curl femoral', 'Piernas', false),
+  ('Elevación de talones (gemelos)', 'Piernas', false),
+  ('Curl de bíceps con barra', 'Brazos', false),
+  ('Curl de bíceps con mancuernas', 'Brazos', false),
+  ('Curl martillo', 'Brazos', false),
+  ('Press francés', 'Brazos', false),
+  ('Extensión de tríceps en polea', 'Brazos', false),
+  ('Fondos de tríceps en banco', 'Brazos', false),
+  ('Plancha (plank)', 'Core', false),
+  ('Crunch abdominal', 'Core', false),
+  ('Elevación de piernas', 'Core', false),
+  ('Rueda abdominal', 'Core', false);

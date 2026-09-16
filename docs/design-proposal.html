@@ -1,0 +1,956 @@
+<title>RepLog</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#F1EEE6;
+    --surface:#FBFAF6;
+    --ink:#20241F;
+    --ink-soft:#5E6259;
+    --line:#DBD5C6;
+    --accent:#146661;
+    --accent-soft:#DCEAE6;
+    --must:#146661;
+    --must-soft:#DCEAE6;
+    --should:#8A5A12;
+    --should-soft:#F1E3C8;
+    --later:#5E6259;
+    --later-soft:#E7E3D6;
+    --shadow: 0 1px 0 rgba(32,36,31,0.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14181A;
+      --surface:#1B2123;
+      --ink:#EBE9E1;
+      --ink-soft:#9BA39C;
+      --line:#2B3234;
+      --accent:#5FD1C9;
+      --accent-soft:#1D3937;
+      --must:#5FD1C9;
+      --must-soft:#1D3937;
+      --should:#E4B268;
+      --should-soft:#3A2E17;
+      --later:#9BA39C;
+      --later-soft:#262C2A;
+      --shadow: 0 1px 0 rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14181A;
+    --surface:#1B2123;
+    --ink:#EBE9E1;
+    --ink-soft:#9BA39C;
+    --line:#2B3234;
+    --accent:#5FD1C9;
+    --accent-soft:#1D3937;
+    --must:#5FD1C9;
+    --must-soft:#1D3937;
+    --should:#E4B268;
+    --should-soft:#3A2E17;
+    --later:#9BA39C;
+    --later-soft:#262C2A;
+    --shadow: 0 1px 0 rgba(0,0,0,0.3);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16.5px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:'Big Shoulders Display', Oswald, 'Arial Narrow', sans-serif;}
+  .mono{font-family:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;}
+
+  h1,h2,h3{text-wrap:balance; margin:0;}
+  p{margin:0;}
+  a{color:var(--accent);}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:0 1.5rem;}
+
+  /* ---------- header ---------- */
+  header.hero{
+    border-bottom:1px solid var(--line);
+    padding:3rem 0 2rem;
+  }
+  .kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;
+  }
+  .kicker .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);display:inline-block;}
+  h1.title{
+    font-size:clamp(2.6rem, 6vw, 4.4rem);
+    font-weight:800;
+    letter-spacing:.01em;
+    line-height:.92;
+    margin-top:.6rem;
+    color:var(--ink);
+  }
+  .subtitle{
+    max-width:44rem;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    margin-top:.9rem;
+  }
+  .quote{
+    margin-top:1.6rem;
+    padding-left:1rem;
+    border-left:3px solid var(--accent);
+    font-size:1.25rem;
+    font-style:italic;
+    color:var(--ink);
+    max-width:38rem;
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns: 208px minmax(0,1fr);
+    gap:3rem;
+    max-width:1120px;
+    margin:0 auto;
+    padding:2.5rem 1.5rem 5rem;
+  }
+  nav.index{position:sticky; top:1.75rem; align-self:start; height:max-content;}
+  nav.index ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.05rem;}
+  nav.index a{
+    display:block; text-decoration:none; color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace; font-size:.78rem;
+    padding:.45rem .1rem .45rem .8rem;
+    border-left:2px solid transparent;
+    line-height:1.3;
+  }
+  nav.index a .n{color:var(--ink-soft); margin-right:.4em;}
+  nav.index a.active{color:var(--ink); border-left-color:var(--accent); font-weight:600;}
+  nav.index a.active .n{color:var(--accent);}
+  nav.index a:hover{color:var(--ink);}
+
+  @media (max-width: 960px){
+    .layout{grid-template-columns:1fr; padding-top:1.2rem;}
+    nav.index{
+      position:sticky; top:0; z-index:5; background:var(--paper);
+      padding:.6rem 0; margin:0 -1.5rem 1.5rem; border-bottom:1px solid var(--line);
+      overflow-x:auto;
+    }
+    nav.index ol{flex-direction:row; padding:0 1.5rem; gap:.3rem;}
+    nav.index a{white-space:nowrap; border-left:none; border-bottom:2px solid transparent; padding:.3rem .1rem;}
+    nav.index a.active{border-left:none; border-bottom-color:var(--accent);}
+  }
+
+  main{min-width:0;}
+
+  .intro{max-width:42rem; margin-bottom:1rem; color:var(--ink-soft);}
+  .intro p + p{margin-top:.9rem;}
+
+  section.spec{
+    padding-top:3.2rem;
+    margin-top:3.2rem;
+    border-top:1px solid var(--line);
+    scroll-margin-top:4.5rem;
+  }
+  section.spec:first-of-type{border-top:none; margin-top:2.2rem; padding-top:0;}
+
+  .sec-head{display:flex; align-items:flex-start; gap:1.1rem; margin-bottom:1.4rem;}
+  .sec-num{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:800;
+    font-size:3rem; line-height:1; color:var(--accent); min-width:2.4ch;
+  }
+  .sec-title h2{font-size:1.55rem; font-weight:700; font-family:'Big Shoulders Display', sans-serif; letter-spacing:.01em;}
+  .sec-title .sec-sub{color:var(--ink-soft); font-size:.95rem; margin-top:.2rem; max-width:34rem;}
+
+  .prose{max-width:42rem;}
+  .prose p + p{margin-top:.85rem;}
+  .lead{font-size:1.08rem;}
+
+  ul.list, ol.list{max-width:42rem; padding-left:1.2rem; margin:0;}
+  ul.list li, ol.list li{margin-bottom:.7rem; padding-left:.15rem;}
+  ul.list li::marker{color:var(--accent);}
+  .list b, .prose b{font-weight:600;}
+
+  .why{color:var(--ink-soft); font-size:.95rem;}
+
+  /* ---------- principles ---------- */
+  .principles{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:.5rem;}
+  .principle{background:var(--surface); padding:1.2rem 1.3rem;}
+  .principle .pnum{font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--accent); letter-spacing:.08em;}
+  .principle h3{font-size:1.02rem; font-weight:600; margin-top:.35rem; font-family:'Source Serif 4', serif;}
+  .principle p{margin-top:.4rem; font-size:.92rem; color:var(--ink-soft);}
+
+  /* ---------- nav mock ---------- */
+  .navmock{
+    margin-top:1.6rem; max-width:26rem; border:1px solid var(--line); background:var(--surface);
+    border-radius:2px; overflow:hidden;
+  }
+  .navmock .screen{padding:1.3rem 1.1rem 1rem; border-bottom:1px solid var(--line);}
+  .navmock .screen .cta{
+    background:var(--accent); color:var(--surface); font-weight:600; text-align:center;
+    padding:.7rem; border-radius:3px; font-size:.95rem; font-family:'IBM Plex Mono',monospace;
+  }
+  .navmock .tabbar{display:flex;}
+  .navmock .tab{
+    flex:1; text-align:center; padding:.75rem .3rem; font-size:.68rem; color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace; border-right:1px solid var(--line); letter-spacing:.02em;
+  }
+  .navmock .tab:last-child{border-right:none;}
+  .navmock .tab.main{color:var(--accent); font-weight:600; position:relative;}
+  .navmock .tab .ico{display:block; font-size:1.05rem; margin-bottom:.15rem;}
+  .navmock .tab.main .ico{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:2rem; height:2rem; border-radius:50%; background:var(--accent); color:var(--surface);
+    margin-bottom:.2rem;
+  }
+
+  .navnote{max-width:42rem; margin-top:1.2rem; font-size:.93rem; color:var(--ink-soft);}
+  .navnote b{color:var(--ink); font-weight:600;}
+
+  /* ---------- flow diagram ---------- */
+  figure{margin:0;}
+  figure.diagram{margin-top:1.4rem;}
+  .diagram-scroll{overflow-x:auto; border:1px solid var(--line); background:var(--surface); padding:.5rem;}
+  figure.diagram svg{display:block; min-width:640px;}
+  figcaption{font-size:.85rem; color:var(--ink-soft); margin-top:.6rem; max-width:42rem;}
+
+  /* ---------- tap tally ---------- */
+  .taptally{display:flex; gap:1px; background:var(--line); border:1px solid var(--line); margin-top:1.4rem; max-width:42rem; flex-wrap:wrap;}
+  .taptally .cell{background:var(--surface); padding:.9rem 1.1rem; flex:1; min-width:140px;}
+  .taptally .cell .big{font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:1.9rem; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .taptally .cell .label{font-size:.8rem; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- screen cards ---------- */
+  .screens{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); margin-top:.5rem;}
+  .screen-card{background:var(--surface); padding:1.3rem 1.35rem 1.4rem; display:flex; flex-direction:column; gap:.65rem;}
+  .screen-card .sc-title{font-family:'Big Shoulders Display',sans-serif; font-weight:700; font-size:1.15rem; letter-spacing:.01em;}
+  .screen-card dl{margin:0; display:flex; flex-direction:column; gap:.5rem;}
+  .screen-card dt{font-family:'IBM Plex Mono',monospace; font-size:.66rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); margin-bottom:.12rem;}
+  .screen-card dd{margin:0; font-size:.88rem; color:var(--ink-soft); line-height:1.5;}
+  .screen-card dd.avoid{color:var(--should);}
+
+  /* ---------- tables ---------- */
+  .tbl-wrap{overflow-x:auto; margin-top:1.2rem;}
+  table.spec-table{border-collapse:collapse; width:100%; min-width:560px; font-size:.9rem;}
+  table.spec-table th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-size:.68rem; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--ink-soft); border-bottom:1px solid var(--line); padding:.5rem .8rem .5rem 0;
+  }
+  table.spec-table td{padding:.65rem .8rem .65rem 0; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink);}
+  table.spec-table td.mono{font-family:'IBM Plex Mono',monospace; font-size:.83rem; white-space:nowrap;}
+  table.spec-table tr:last-child td{border-bottom:1px solid var(--line);}
+  table.spec-table td.muted{color:var(--ink-soft);}
+
+  .chip{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.03em;
+    padding:.18rem .5rem; border-radius:3px; white-space:nowrap;
+  }
+  .chip.must{background:var(--must-soft); color:var(--must);}
+  .chip.should{background:var(--should-soft); color:var(--should);}
+  .chip.later{background:var(--later-soft); color:var(--later);}
+
+  /* ---------- roadmap ---------- */
+  .roadmap{max-width:46rem; margin-top:1rem; position:relative; padding-left:1.6rem;}
+  .roadmap::before{content:"";position:absolute; left:5px; top:.5rem; bottom:.5rem; width:1px; background:var(--line);}
+  .phase{position:relative; padding-bottom:2.1rem;}
+  .phase:last-child{padding-bottom:0;}
+  .phase::before{
+    content:""; position:absolute; left:-1.6rem; top:.35rem; width:11px; height:11px; border-radius:50%;
+    background:var(--paper); border:2px solid var(--accent);
+  }
+  .phase .ptag{font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.08em; color:var(--accent); text-transform:uppercase;}
+  .phase h3{font-family:'Big Shoulders Display',sans-serif; font-weight:700; font-size:1.25rem; margin-top:.15rem;}
+  .phase p{color:var(--ink-soft); margin-top:.35rem; font-size:.94rem; max-width:38rem;}
+
+  /* ---------- risk list ---------- */
+  .risks{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line); margin-top:1rem;}
+  .risk{background:var(--surface); padding:1rem 1.2rem; display:grid; grid-template-columns:12rem 1fr; gap:1rem;}
+  .risk .rq{font-weight:600; font-size:.94rem;}
+  .risk .ra{color:var(--ink-soft); font-size:.92rem;}
+  @media (max-width:700px){.risk{grid-template-columns:1fr; gap:.3rem;}}
+
+  /* ---------- callout ---------- */
+  .callout{
+    margin-top:1.4rem; max-width:42rem; border:1px solid var(--line); border-left:3px solid var(--accent);
+    background:var(--surface); padding:1rem 1.2rem; font-size:.94rem; color:var(--ink-soft);
+  }
+  .callout b{color:var(--ink);}
+
+  footer.end{
+    border-top:1px solid var(--line); margin-top:3.5rem; padding-top:1.5rem;
+    font-size:.82rem; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker"><span class="dot"></span> Documento de diseño · sin código, sin implementación</div>
+    <h1 class="title">RepLog</h1>
+    <p class="subtitle">Propuesta de producto, UX/UI y arquitectura para un tracker de entrenamientos mobile-first — pensado para reemplazar el Atajo de iPhone + Google Sheets, y preparado para crecer hacia una plataforma de profesores y gimnasios.</p>
+    <p class="quote">"Registrar una serie debería tomar el mismo tiempo que soltar la barra."</p>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="index" aria-label="Secciones del documento">
+    <ol>
+      <li><a href="#s01"><span class="n">01</span>Concepto</a></li>
+      <li><a href="#s02"><span class="n">02</span>Principios</a></li>
+      <li><a href="#s03"><span class="n">03</span>Navegación</a></li>
+      <li><a href="#s04"><span class="n">04</span>Flujo principal</a></li>
+      <li><a href="#s05"><span class="n">05</span>Pantallas</a></li>
+      <li><a href="#s06"><span class="n">06</span>Modelo de datos</a></li>
+      <li><a href="#s07"><span class="n">07</span>MVP</a></li>
+      <li><a href="#s08"><span class="n">08</span>Fuera del MVP</a></li>
+      <li><a href="#s09"><span class="n">09</span>Stack</a></li>
+      <li><a href="#s10"><span class="n">10</span>Roadmap</a></li>
+      <li><a href="#s11"><span class="n">11</span>Riesgos</a></li>
+      <li><a href="#s12"><span class="n">12</span>Recomendación</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="intro">
+      <p>Hoy el registro vive en un Atajo de iPhone que llena un formulario y escribe en Google Sheets. Funciona porque es rápido y no interrumpe el entrenamiento — esa es la única razón por la que sigue vivo después de tantas rutinas. Ese es el estándar a superar, no una app de gimnasio genérica con login, dashboard y quince pantallas.</p>
+      <p>Lo que sigue es la propuesta de producto, UX y arquitectura para <b style="color:var(--ink)">RepLog</b> — nombre de trabajo tomado de la carpeta del proyecto, cambialo cuando quieras. Cero código, cero implementación: solo las decisiones que conviene tomar antes de escribir la primera línea.</p>
+    </div>
+
+    <!-- 01 CONCEPTO -->
+    <section class="spec" id="s01">
+      <div class="sec-head">
+        <div class="sec-num">01</div>
+        <div class="sec-title">
+          <h2>Concepto del producto</h2>
+          <div class="sec-sub">Qué es RepLog y por qué existe</div>
+        </div>
+      </div>
+      <div class="prose lead">
+        <p>RepLog es una <b>libreta de entrenamiento digital que se anticipa a lo que vas a escribir</b>. No es una red social de fitness, no es un coach con IA y no es un gestor de gimnasios — todavía. Es el reemplazo natural del Atajo: la misma velocidad, pero con memoria (recuerda lo que hiciste), estructura (rutinas y ejercicios) y progreso (historial y récords) que una hoja de cálculo no puede darte sin trabajo manual.</p>
+        <p>Propuesta de valor en una frase: <b style="color:var(--ink)">registrás una serie en dos toques porque la app ya sabe qué pesabas la última vez.</b> Todo lo demás del producto — rutinas, historial, progreso, récords — existe para sostener esa acción central, no para competir con ella.</p>
+        <p>El usuario inicial sos vos: principiante/intermedio, construyendo el hábito de registrar cada serie. Diseñar para ese caso real primero — no para un "power user" hipotético ni para un profesor con veinte alumnos — es lo que mantiene el MVP chico y honesto.</p>
+      </div>
+    </section>
+
+    <!-- 02 PRINCIPIOS -->
+    <section class="spec" id="s02">
+      <div class="sec-head">
+        <div class="sec-num">02</div>
+        <div class="sec-title">
+          <h2>Principios de diseño</h2>
+          <div class="sec-sub">Lo que decide cada empate de diseño de acá en adelante</div>
+        </div>
+      </div>
+      <div class="principles">
+        <div class="principle">
+          <div class="pnum">01</div>
+          <h3>El registro es la app</h3>
+          <p>Todo lo demás — progreso, historial, perfil — es secundario y vive a un toque de distancia, nunca compite por espacio con la pantalla de serie activa.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">02</div>
+          <h3>Cero fricción de escritura</h3>
+          <p>El valor por defecto de cada campo es lo que hiciste la última vez. El usuario edita, no completa desde cero.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">03</div>
+          <h3>Dos toques, no dos pantallas</h3>
+          <p>Confirmar una serie repetida no debería sacarte de la pantalla del ejercicio activo ni abrir un formulario.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">04</div>
+          <h3>La zona del pulgar manda</h3>
+          <p>Controles principales en el tercio inferior de la pantalla, pensados para una mano, con el teléfono apoyado o sudado.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">05</div>
+          <h3>Contexto en línea, no en otra pestaña</h3>
+          <p>"La última vez hiciste 45×10" vive pegado al campo de peso, no en un historial que hay que ir a buscar.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">06</div>
+          <h3>Todo es reversible</h3>
+          <p>Deshacer en vez de confirmar. Nunca un modal de "¿estás seguro?" entre una serie y la siguiente.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">07</div>
+          <h3>Silencio visual</h3>
+          <p>Un acento, jerarquía clara, sin rachas ni insignias ni confetti compitiendo con el peso que acabás de levantar.</p>
+        </div>
+        <div class="principle">
+          <div class="pnum">08</div>
+          <h3>Rápido de abrir, rápido de cerrar</h3>
+          <p>La sesión ideal empieza en la pantalla de inicio y termina con un solo "Finalizar" — sin recorridos intermedios.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 NAVEGACION -->
+    <section class="spec" id="s03">
+      <div class="sec-head">
+        <div class="sec-num">03</div>
+        <div class="sec-title">
+          <h2>Estructura de navegación</h2>
+          <div class="sec-sub">Cinco destinos, uno de ellos es una acción, no una pestaña</div>
+        </div>
+      </div>
+      <div class="prose">
+        <p>La referencia conceptual que mandaste (Entrenar / Progreso / Récords / Rutinas / Perfil) tiene un problema: convierte "Progreso" y "Récords" en destinos separados cuando en realidad son <i>vistas del mismo historial</i>. Separarlos suma una pestaña que casi nunca se visita sola y le resta espacio de pulgar a lo que sí se usa todos los días.</p>
+        <p>Propuesta: <b style="color:var(--ink)">cuatro pestañas fijas más un botón central de acción</b>, siguiendo el mismo patrón que una barra de cámara — la acción principal no es una pestaña más, es el botón que hace el trabajo.</p>
+      </div>
+
+      <div class="navmock">
+        <div class="screen">
+          <p style="font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--ink-soft); margin-bottom:.5rem;">HOY · PECHO + TRÍCEPS</p>
+          <div class="cta">🏋️ Entrenar</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab"><span class="ico">🏠</span>Inicio</div>
+          <div class="tab"><span class="ico">📚</span>Rutinas</div>
+          <div class="tab main"><span class="ico">＋</span>Entrenar</div>
+          <div class="tab"><span class="ico">📈</span>Historial</div>
+          <div class="tab"><span class="ico">👤</span>Perfil</div>
+        </div>
+      </div>
+
+      <div class="navnote">
+        <p><b>Inicio</b> — atajo al entrenamiento de hoy y a lo último registrado, nada más.<br>
+        <b>Rutinas</b> — crear, editar y elegir qué entrenar.<br>
+        <b>Entrenar</b> — botón central; si hay una sesión en curso, su ícono cambia por el cronómetro corriendo.<br>
+        <b>Historial</b> — una pantalla con tres vistas internas por pestañas: Sesiones, Progreso, Récords. Así "progreso" y "PRs" quedan a un toque, sin ocupar un destino propio.<br>
+        <b>Perfil</b> — cuenta, peso corporal, ajustes.</p>
+      </div>
+    </section>
+
+    <!-- 04 FLUJO -->
+    <section class="spec" id="s04">
+      <div class="sec-head">
+        <div class="sec-num">04</div>
+        <div class="sec-title">
+          <h2>Flujo principal de usuario</h2>
+          <div class="sec-sub">Abrir → entrenar → registrar → cerrar, contando cada toque</div>
+        </div>
+      </div>
+
+      <figure class="diagram">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 1180 190" role="img" aria-label="Flujo de siete pasos desde abrir la app hasta finalizar la sesión, con el número de toques que requiere cada paso">
+            <defs>
+              <marker id="af1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-soft)"/>
+              </marker>
+            </defs>
+            <!-- connecting line -->
+            <line x1="70" y1="60" x2="1110" y2="60" stroke="var(--line)" stroke-width="1"/>
+            <!-- steps -->
+            <!-- step template: circle+number at y=60, label below, tap badge above -->
+            <g font-family="IBM Plex Mono, monospace">
+              <!-- step 1 -->
+              <g transform="translate(70,60)">
+                <circle r="20" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--ink-soft)">1</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--ink-soft)">0 TOQUES</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Abrir app</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">ve el plan de hoy</text>
+              </g>
+              <!-- step 2 -->
+              <g transform="translate(230,60)">
+                <circle r="20" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--accent)">2</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--accent)">1 TOQUE</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Tap "Entrenar"</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">entra a la rutina de hoy</text>
+              </g>
+              <!-- step 3 -->
+              <g transform="translate(390,60)">
+                <circle r="20" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--ink-soft)">3</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--ink-soft)">0–1 TOQUE</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Ejercicio activo</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">peso y reps precargados</text>
+              </g>
+              <!-- step 4 (highlight, the core loop) -->
+              <g transform="translate(570,60)">
+                <circle r="23" fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="14" fill="var(--surface)" font-weight="700">✓</text>
+                <text text-anchor="middle" y="-34" font-size="10.5" fill="var(--accent)" font-weight="600">1 TOQUE</text>
+                <text text-anchor="middle" y="45" font-size="12" fill="var(--ink)" font-weight="600">Confirmar serie</text>
+                <text text-anchor="middle" y="61" font-size="10.5" fill="var(--ink-soft)">se repite por cada serie</text>
+              </g>
+              <!-- step 5 -->
+              <g transform="translate(750,60)">
+                <circle r="20" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--ink-soft)">5</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--ink-soft)">0 TOQUES</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Descanso</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">timer automático</text>
+              </g>
+              <!-- step 6 -->
+              <g transform="translate(920,60)">
+                <circle r="20" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--ink-soft)">6</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--ink-soft)">1 TOQUE</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Siguiente ejercicio</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">swipe o tap</text>
+              </g>
+              <!-- step 7 -->
+              <g transform="translate(1110,60)">
+                <circle r="20" fill="var(--surface)" stroke="var(--line)" stroke-width="1.5"/>
+                <text text-anchor="middle" dy=".35em" font-size="13" fill="var(--ink-soft)">7</text>
+                <text text-anchor="middle" y="-32" font-size="10.5" fill="var(--ink-soft)">1 TOQUE</text>
+                <text text-anchor="middle" y="42" font-size="12" fill="var(--ink)">Finalizar</text>
+                <text text-anchor="middle" y="58" font-size="10.5" fill="var(--ink-soft)">resumen + guardado</text>
+              </g>
+            </g>
+            <!-- arrowheads between the circles, drawn short so they don't cross labels -->
+            <g stroke="var(--ink-soft)" stroke-width="1.3" marker-end="url(#af1)">
+              <line x1="95" y1="60" x2="205" y2="60"/>
+              <line x1="255" y1="60" x2="365" y2="60"/>
+              <line x1="415" y1="60" x2="542" y2="60"/>
+              <line x1="598" y1="60" x2="725" y2="60"/>
+              <line x1="775" y1="60" x2="895" y2="60"/>
+              <line x1="945" y1="60" x2="1085" y2="60"/>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Del abrir al confirmar cada serie: el único paso que se repite muchas veces por sesión (paso 4) es también el más barato — un toque, porque el valor ya viene precargado.</figcaption>
+      </figure>
+
+      <div class="taptally">
+        <div class="cell"><div class="big">1</div><div class="label">TOQUE · SERIE SIN CAMBIOS</div></div>
+        <div class="cell"><div class="big">~3</div><div class="label">TOQUES · SERIE CON AJUSTE DE PESO/REPS</div></div>
+        <div class="cell"><div class="big">0</div><div class="label">TOQUES · VER LO ANTERIOR (YA ESTÁ VISIBLE)</div></div>
+        <div class="cell"><div class="big">6–8</div><div class="label">TOQUES · SESIÓN COMPLETA DE PRINCIPIO A FIN</div></div>
+      </div>
+    </section>
+
+    <!-- 05 PANTALLAS -->
+    <section class="spec" id="s05">
+      <div class="sec-head">
+        <div class="sec-num">05</div>
+        <div class="sec-title">
+          <h2>Diseño de cada pantalla</h2>
+          <div class="sec-sub">Nueve pantallas, cada una con un único trabajo</div>
+        </div>
+      </div>
+
+      <div class="screens">
+        <div class="screen-card">
+          <div class="sc-title">Inicio</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Saludo, el entrenamiento planeado para hoy (si hay rutina activa) y la última serie registrada de cualquier ejercicio.</dd></div>
+            <div><dt>Principal</dt><dd>Un solo botón grande: "Entrenar".</dd></div>
+            <div><dt>Secundaria</dt><dd>Tocar el bloque de "último entrenamiento" abre el detalle en Historial.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Widgets, gráficos, motivación genérica o más de un CTA.</dd></div>
+            <div><dt>Se siente</dt><dd>Como abrir una libreta en la página de hoy — no como un dashboard.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Elegir / iniciar rutina</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Si hay una rutina programada para hoy, la salta directo. Si no, lista corta de rutinas guardadas.</dd></div>
+            <div><dt>Principal</dt><dd>Tocar una rutina empieza la sesión inmediatamente.</dd></div>
+            <div><dt>Secundaria</dt><dd>"Entrenamiento libre" (sin rutina) para un día suelto.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Pedir confirmar fecha, hora o "¿listo para empezar?".</dd></div>
+            <div><dt>Se siente</dt><dd>Una decisión, no un formulario.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Sesión activa (ejercicio)</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Ejercicio actual, esquema objetivo (4×8–10), series anteriores como referencia y campos de peso/reps precargados con el último valor.</dd></div>
+            <div><dt>Principal</dt><dd>Confirmar serie (✓). Stepper +/– sobre peso y reps para ajustar rápido.</dd></div>
+            <div><dt>Secundaria</dt><dd>Marcar fallo, agregar nota, iniciar/saltar el timer de descanso, repetir el bloque anterior tal cual.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Teclado numérico como método por defecto; formularios con más de 2 campos visibles a la vez.</dd></div>
+            <div><dt>Se siente</dt><dd>Como tildar una lista, no como llenar una planilla.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Resumen de sesión</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Duración total, volumen levantado, series totales y PRs logrados en esta sesión (si los hubo).</dd></div>
+            <div><dt>Principal</dt><dd>"Finalizar" — guarda y vuelve a Inicio.</dd></div>
+            <div><dt>Secundaria</dt><dd>Editar una nota general de la sesión.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Compartir, exportar o gamificación en esta pantalla — no todavía.</dd></div>
+            <div><dt>Se siente</dt><dd>Un cierre breve y satisfactorio, no una encuesta.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Rutinas (lista + editor)</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Rutinas guardadas; al editar, lista de ejercicios con su esquema (series × reps, descanso).</dd></div>
+            <div><dt>Principal</dt><dd>Crear rutina, agregar ejercicio (predefinido o propio), reordenar.</dd></div>
+            <div><dt>Secundaria</dt><dd>Duplicar rutina, asignar días de la semana (opcional).</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Periodización avanzada, superseries o drop-sets en el MVP.</dd></div>
+            <div><dt>Se siente</dt><dd>Editar una plantilla, no programar un sistema.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Historial</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Tres vistas por pestaña: <b>Sesiones</b> (lista cronológica), <b>Progreso</b> (peso/volumen por ejercicio en el tiempo) y <b>Récords</b> (PRs por ejercicio).</dd></div>
+            <div><dt>Principal</dt><dd>Tocar una sesión abre su detalle. Elegir ejercicio filtra Progreso.</dd></div>
+            <div><dt>Secundaria</dt><dd>Filtrar por rango de fechas o por ejercicio.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Gráficos con más de una métrica a la vez; comparativas entre usuarios.</dd></div>
+            <div><dt>Se siente</dt><dd>Un cuaderno que se puede hojear hacia atrás.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Detalle de sesión pasada</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Todos los ejercicios y series de esa sesión, tal como quedaron registrados, con duración total.</dd></div>
+            <div><dt>Principal</dt><dd>"Repetir esta sesión" — la clona como punto de partida de un entrenamiento nuevo.</dd></div>
+            <div><dt>Secundaria</dt><dd>Editar un valor si hubo un error de tipeo.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Permitir reescribir la sesión libremente después de días — genera desconfianza en el historial.</dd></div>
+            <div><dt>Se siente</dt><dd>Un registro consultable, casi de solo lectura.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Perfil</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Datos de cuenta, unidad de peso (kg/lb), registro de peso corporal (fecha + valor) y ajustes.</dd></div>
+            <div><dt>Principal</dt><dd>Agregar registro de peso corporal de hoy (un campo, un botón).</dd></div>
+            <div><dt>Secundaria</dt><dd>Cerrar sesión, cambiar unidad, ver historial de peso corporal.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Fotos de progreso, medidas corporales múltiples, metas — para después.</dd></div>
+            <div><dt>Se siente</dt><dd>Una ficha personal breve, no una configuración corporativa.</dd></div>
+          </dl>
+        </div>
+
+        <div class="screen-card">
+          <div class="sc-title">Onboarding / autenticación</div>
+          <dl>
+            <div><dt>Muestra</dt><dd>Login con email o Google/Apple. Nada de tour de bienvenida con slides.</dd></div>
+            <div><dt>Principal</dt><dd>Entrar. Si es la primera vez, ir directo a "creá tu primera rutina" o "usá una rutina de ejemplo".</dd></div>
+            <div><dt>Secundaria</dt><dd>Saltar la creación de rutina y explorar el ejercicio libre.</dd></div>
+            <div><dt>Evitar</dt><dd class="avoid">Cuestionarios de objetivos, nivel, disponibilidad — eso es para un futuro modo "profesor".</dd></div>
+            <div><dt>Se siente</dt><dd>Dos minutos y ya estás entrenando, no configurando una cuenta.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 MODELO DE DATOS -->
+    <section class="spec" id="s06">
+      <div class="sec-head">
+        <div class="sec-num">06</div>
+        <div class="sec-title">
+          <h2>Modelo de datos</h2>
+          <div class="sec-sub">Ocho tablas para el MVP, tres reservadas para cuando existan gimnasios</div>
+        </div>
+      </div>
+      <div class="prose">
+        <p>La estructura que propusiste (users, gyms, gym_memberships, exercises, workouts, workout_exercises, sets, routines, routine_exercises, routine_assignments) ya tiene la forma correcta. El ajuste principal: <b style="color:var(--ink)">separar lo planeado de lo ejecutado</b>. Una rutina describe una intención ("4×8–10 de press banca"); un set describe un hecho ("45×10, así fue"). Si se guardan en la misma tabla, cada vez que ajustás el peso en vivo terminás reescribiendo la plantilla de la rutina — exactamente el tipo de bug silencioso que conviene evitar desde el diseño.</p>
+        <p>Las tres tablas de gimnasios/profesores no se implementan en el MVP, pero <b style="color:var(--ink)">existen en el diagrama desde el día uno</b> como columnas nullable en las tablas centrales (<code class="mono">gym_id</code> en <code class="mono">routines</code> y <code class="mono">workouts</code>). Así, cuando llegue la Fase 3, es una migración aditiva — nuevas tablas y un valor que deja de ser null — no una reconstrucción.</p>
+      </div>
+
+      <figure class="diagram">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 985 300" role="img" aria-label="Diagrama entidad-relación: ocho tablas activas del MVP (users, routines, routine_exercises, exercises, body_weight_logs, workouts, workout_exercises, sets) conectadas con líneas sólidas, y tres tablas futuras para gimnasios (gyms, gym_memberships, routine_assignments) conectadas con líneas punteadas que ya se apoyan en columnas reservadas de las tablas activas">
+            <defs>
+              <marker id="arrInk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--ink)"/>
+              </marker>
+              <marker id="arrAcc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+
+            <!-- divider -->
+            <line x1="0" y1="200" x2="985" y2="200" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/>
+            <text x="0" y="196" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--ink-soft)" letter-spacing=".04em">PREPARADO PARA EL FUTURO — SIN USO EN EL MVP</text>
+
+            <!-- MVP boxes row1 y=15 h=44, row2 y=125 h=44; col_x=[60,300,540,780] w=150 -->
+            <g font-family="IBM Plex Mono, monospace" font-size="11">
+              <!-- users -->
+              <rect x="60" y="15" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="135" y="41" text-anchor="middle" fill="var(--ink)">users</text>
+              <!-- routines -->
+              <rect x="300" y="15" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="375" y="41" text-anchor="middle" fill="var(--ink)">routines</text>
+              <!-- routine_exercises -->
+              <rect x="540" y="15" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="615" y="41" text-anchor="middle" fill="var(--ink)">routine_exercises</text>
+              <!-- exercises -->
+              <rect x="780" y="15" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="855" y="41" text-anchor="middle" fill="var(--ink)">exercises</text>
+
+              <!-- body_weight_logs -->
+              <rect x="60" y="125" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="135" y="151" text-anchor="middle" fill="var(--ink)">body_weight_logs</text>
+              <!-- workouts -->
+              <rect x="300" y="125" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="375" y="151" text-anchor="middle" fill="var(--ink)">workouts</text>
+              <!-- workout_exercises -->
+              <rect x="540" y="125" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="615" y="151" text-anchor="middle" fill="var(--ink)">workout_exercises</text>
+              <!-- sets -->
+              <rect x="780" y="125" width="150" height="44" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.2"/>
+              <text x="855" y="151" text-anchor="middle" fill="var(--ink)">sets</text>
+
+              <!-- future row -->
+              <rect x="60" y="215" width="150" height="44" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <text x="135" y="241" text-anchor="middle" fill="var(--accent)">gyms</text>
+              <rect x="300" y="215" width="150" height="44" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <text x="375" y="241" text-anchor="middle" fill="var(--accent)">gym_memberships</text>
+              <rect x="540" y="215" width="150" height="44" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3"/>
+              <text x="615" y="241" text-anchor="middle" fill="var(--accent)">routine_assignments</text>
+            </g>
+
+            <!-- solid MVP relations -->
+            <g stroke="var(--ink)" stroke-width="1.2" marker-end="url(#arrInk)" fill="none">
+              <line x1="210" y1="37" x2="298" y2="37"/>
+              <line x1="135" y1="59" x2="135" y2="123"/>
+              <polyline points="180,59 180,90 340,90 340,123"/>
+              <line x1="450" y1="37" x2="538" y2="37"/>
+              <line x1="690" y1="37" x2="778" y2="37"/>
+              <line x1="375" y1="59" x2="375" y2="123"/>
+              <line x1="450" y1="147" x2="538" y2="147"/>
+              <polyline points="655,123 655,90 855,90 855,59"/>
+              <line x1="690" y1="147" x2="778" y2="147"/>
+            </g>
+            <!-- solid labels -->
+            <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--ink-soft)">
+              <text x="254" y="31" text-anchor="middle">owner_id</text>
+              <text x="150" y="94" text-anchor="start">user_id</text>
+              <text x="260" y="84" text-anchor="middle">user_id</text>
+              <text x="494" y="31" text-anchor="middle">routine_id</text>
+              <text x="734" y="31" text-anchor="middle">exercise_id</text>
+              <text x="390" y="94" text-anchor="start">routine_id (opcional)</text>
+              <text x="494" y="141" text-anchor="middle">workout_id</text>
+              <text x="760" y="84" text-anchor="middle">exercise_id</text>
+              <text x="734" y="141" text-anchor="middle">workout_exercise_id</text>
+            </g>
+
+            <!-- dashed future relations -->
+            <g stroke="var(--accent)" stroke-width="1.2" marker-end="url(#arrAcc)" fill="none" stroke-dasharray="4 3">
+              <line x1="210" y1="237" x2="298" y2="237"/>
+              <polyline points="60,37 25,37 25,205 330,205 330,213"/>
+              <line x1="450" y1="237" x2="538" y2="237"/>
+              <polyline points="615,213 615,205 495,205 495,90 405,90 405,59"/>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--accent)">
+              <text x="254" y="231" text-anchor="middle">gym_id</text>
+              <text x="30" y="122" text-anchor="start" transform="rotate(-90 30 122)">user_id</text>
+              <text x="494" y="231" text-anchor="middle">assigned_to</text>
+              <text x="530" y="100" text-anchor="middle">routine_id</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>Líneas sólidas = relaciones activas en el MVP. Líneas punteadas de acento = relaciones que ya podría tener el esquema si mañana agregás gimnasios, sin tocar las tablas centrales.</figcaption>
+      </figure>
+
+      <div class="tbl-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr><th>Tabla</th><th>Campos clave</th><th>Nota</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">users</td><td>id, email, display_name, unit_pref (kg/lb), created_at</td><td class="muted">Una sola tabla de usuarios para todos los roles futuros — alumno, profesor y dueño de gimnasio son roles, no tipos de cuenta distintos.</td></tr>
+            <tr><td class="mono">exercises</td><td>id, name, muscle_group, owner_id (null = global), is_custom</td><td class="muted">Catálogo predefinido con owner_id null; los ejercicios propios del usuario tienen owner_id.</td></tr>
+            <tr><td class="mono">routines</td><td>id, owner_id, name, gym_id (null), created_by (null)</td><td class="muted">La rutina es la <b>plantilla</b>: qué se planea hacer.</td></tr>
+            <tr><td class="mono">routine_exercises</td><td>id, routine_id, exercise_id, order, target_sets, target_reps_min/max, target_rest_sec</td><td class="muted">Esquema objetivo por ejercicio dentro de la rutina.</td></tr>
+            <tr><td class="mono">workouts</td><td>id, user_id, routine_id (null), gym_id (null), started_at, ended_at, notes</td><td class="muted">Una <b>sesión real</b>. routine_id opcional porque puede haber entrenamiento libre.</td></tr>
+            <tr><td class="mono">workout_exercises</td><td>id, workout_id, exercise_id, order</td><td class="muted">Qué ejercicios efectivamente se hicieron en esa sesión.</td></tr>
+            <tr><td class="mono">sets</td><td>id, workout_exercise_id, set_number, weight, reps, is_failure, rest_sec_actual, note, created_at</td><td class="muted">El <b>hecho</b>: lo que realmente pasó. Nunca se sobrescribe la rutina.</td></tr>
+            <tr><td class="mono">body_weight_logs</td><td>id, user_id, logged_at (fecha), weight</td><td class="muted">Una fila por registro. Ni siquiera necesita ser diaria.</td></tr>
+            <tr><td class="mono">gyms</td><td class="muted">id, name, owner_id</td><td class="muted">Futuro — Fase 4.</td></tr>
+            <tr><td class="mono">gym_memberships</td><td class="muted">id, user_id, gym_id, role (student/trainer/owner)</td><td class="muted">Futuro — permite multi-gimnasio y multi-rol por usuario.</td></tr>
+            <tr><td class="mono">routine_assignments</td><td class="muted">id, routine_id, assigned_to_user_id, assigned_by_user_id</td><td class="muted">Futuro — Fase 3, cuando un profesor asigna rutinas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <b>Qué se calcula, no se guarda:</b> los récords personales (máximo peso/volumen por ejercicio) salen de una consulta sobre <code class="mono">sets</code>, no de una tabla aparte — evita que un PR quede desactualizado si se corrige un dato viejo. La duración de la sesión es <code class="mono">ended_at − started_at</code>. El volumen total es una suma sobre la marcha; si más adelante pesa en performance, se cachea en <code class="mono">workouts</code> como columna derivada, nunca como fuente de verdad.
+      </div>
+    </section>
+
+    <!-- 07 MVP -->
+    <section class="spec" id="s07">
+      <div class="sec-head">
+        <div class="sec-num">07</div>
+        <div class="sec-title">
+          <h2>Funcionalidades del MVP</h2>
+          <div class="sec-sub">Tus trece puntos, priorizados</div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table class="spec-table">
+          <thead><tr><th>Función</th><th>Prioridad</th><th>Alcance real en el MVP</th></tr></thead>
+          <tbody>
+            <tr><td>Registro / login</td><td><span class="chip must">imprescindible</span></td><td class="muted">Email o Google/Apple vía Supabase Auth.</td></tr>
+            <tr><td>Registrar series rápidamente</td><td><span class="chip must">imprescindible</span></td><td class="muted">El corazón del producto — ver §04 y §05.</td></tr>
+            <tr><td>Ejercicios predefinidos + propios</td><td><span class="chip must">imprescindible</span></td><td class="muted">Catálogo chico (~40) más "crear ejercicio".</td></tr>
+            <tr><td>Ejecutar una rutina</td><td><span class="chip must">imprescindible</span></td><td class="muted">Sin eso no hay MVP.</td></tr>
+            <tr><td>Crear y editar rutinas</td><td><span class="chip must">imprescindible</span></td><td class="muted">Versión simple: nombre, ejercicios, esquema. Sin días de la semana todavía.</td></tr>
+            <tr><td>Ver el último entrenamiento por ejercicio</td><td><span class="chip must">imprescindible</span></td><td class="muted">Inline en la pantalla de serie, no en otra vista.</td></tr>
+            <tr><td>Duración del entrenamiento</td><td><span class="chip must">imprescindible</span></td><td class="muted">Gratis: timestamp de inicio y fin.</td></tr>
+            <tr><td>Historial</td><td><span class="chip must">imprescindible</span></td><td class="muted">Lista cronológica + detalle de sesión.</td></tr>
+            <tr><td>Perfil personal</td><td><span class="chip must">imprescindible</span></td><td class="muted">Nombre, unidad de peso. Nada más.</td></tr>
+            <tr><td>Temporizador de descanso</td><td><span class="chip should">recomendada</span></td><td class="muted">Cuenta regresiva simple con notificación local al terminar.</td></tr>
+            <tr><td>Récords personales (PRs)</td><td><span class="chip should">recomendada</span></td><td class="muted">Calculados, no gestionados a mano.</td></tr>
+            <tr><td>Progreso por ejercicio</td><td><span class="chip should">recomendada</span></td><td class="muted">Un gráfico de línea simple: peso máximo por sesión.</td></tr>
+            <tr><td>Peso corporal</td><td><span class="chip should">recomendada</span></td><td class="muted">Un campo, una fecha, un historial en lista.</td></tr>
+            <tr><td>Repetir entrenamiento anterior</td><td><span class="chip should">recomendada</span></td><td class="muted">Clona la última sesión de esa rutina como punto de partida.</td></tr>
+            <tr><td>Edición avanzada de rutinas (superseries, drop-sets)</td><td><span class="chip later">para después</span></td><td class="muted">Ver §08.</td></tr>
+            <tr><td>Exportar datos (CSV)</td><td><span class="chip later">para después</span></td><td class="muted">Fácil de agregar, no urgente.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 08 FUERA DEL MVP -->
+    <section class="spec" id="s08">
+      <div class="sec-head">
+        <div class="sec-num">08</div>
+        <div class="sec-title">
+          <h2>Funcionalidades que NO deberían entrar todavía</h2>
+          <div class="sec-sub">Tentadoras, pero cada una abre una puerta que el MVP no necesita cruzar</div>
+        </div>
+      </div>
+      <ul class="list prose">
+        <li><b>Funciones sociales</b> (seguir amigos, feed de entrenamientos) — cambia el producto de herramienta personal a red social; otro tipo de producto, otro tipo de riesgo de moderación.</li>
+        <li><b>Gamificación</b> (rachas, insignias, niveles) — contradice el principio de silencio visual y no lo pediste; se puede evaluar después de tener uso real.</li>
+        <li><b>Coach o sugerencias con IA</b> ("subí 2.5kg esta semana") — requiere confianza en los datos y un criterio de progresión que todavía no está validado con tu propio uso.</li>
+        <li><b>Profesores y gimnasios</b> — la arquitectura ya los deja preparados (§06), pero implementarlos ahora sería construir para un usuario que no existe todavía.</li>
+        <li><b>Integración con wearables</b> (Apple Watch, Garmin, frecuencia cardíaca) — mucho esfuerzo de integración para un dato que no es central al registro de fuerza.</li>
+        <li><b>Nutrición / calorías</b> — otro dominio de producto; mezclarlo diluye la propuesta de "tracker de entrenamiento".</li>
+        <li><b>Marketplace de rutinas</b> o biblioteca pública compartida — necesita moderación de contenido y curaduría antes de tener sentido.</li>
+        <li><b>Multi-idioma</b> — con un solo usuario inicial, es trabajo sin retorno todavía.</li>
+        <li><b>App nativa (Swift/Kotlin)</b> — una PWA instalable cubre el caso de uso a costo y velocidad muy inferiores.</li>
+        <li><b>Notificaciones push complejas</b> (recordatorios de rutina, re-enganche) — una notificación local para el timer de descanso alcanza por ahora.</li>
+      </ul>
+    </section>
+
+    <!-- 09 STACK -->
+    <section class="spec" id="s09">
+      <div class="sec-head">
+        <div class="sec-num">09</div>
+        <div class="sec-title">
+          <h2>Recomendación de stack</h2>
+          <div class="sec-sub">Next.js + Supabase + Vercel + GitHub — evaluado, no asumido</div>
+        </div>
+      </div>
+      <div class="prose">
+        <p><b style="color:var(--ink)">El stack que proponés es adecuado y no hace falta cambiarlo.</b> El motivo no es "es popular", es que encaja con la forma específica del problema:</p>
+        <ul class="list">
+          <li><b>Supabase / PostgreSQL</b> resuelve exactamente el desafío del §06: un modelo relacional donde un usuario puede tener múltiples roles en múltiples gimnasios. Row Level Security te permite escribir hoy la política "un usuario solo ve sus propios workouts" y en la Fase 3 extenderla a "o los de sus alumnos" agregando una regla, no reescribiendo el backend.</li>
+          <li><b>Supabase Auth</b> evita construir login, recuperación de contraseña y OAuth a mano — trabajo que no diferencia el producto.</li>
+          <li><b>Next.js</b> te da una sola base de código para la PWA instalable que este producto necesita (mobile-first, usable desde la pantalla de inicio del iPhone sin pasar por la App Store).</li>
+          <li><b>Vercel + GitHub</b> mantiene el costo en cero mientras el uso sea personal, con despliegue en cada push — velocidad de iteración alta, que es lo que más importa en esta etapa.</li>
+        </ul>
+        <p>Una alternativa real habría sido un enfoque <i>local-first</i> (SQLite en el dispositivo con sync, tipo RxDB o WatermelonDB) para tolerar wifi de gimnasio poco confiable. Vale la pena tenerlo en mente para una v2, pero agregar sync offline-first al MVP es complejidad que no se paga sola todavía — LTE en un gimnasio normalmente alcanza para escribir una fila a la vez.</p>
+        <p>Una pieza que sí conviene sumar desde el principio: <b style="color:var(--ink)">manifest de PWA + service worker mínimo</b>, para que la app se instale en el iPhone como ícono de pantalla de inicio y abra a pantalla completa, sin barra de navegador — es lo que hace que se sienta como una app y no como una página web abierta en Safari.</p>
+      </div>
+    </section>
+
+    <!-- 10 ROADMAP -->
+    <section class="spec" id="s10">
+      <div class="sec-head">
+        <div class="sec-num">10</div>
+        <div class="sec-title">
+          <h2>Propuesta de roadmap</h2>
+          <div class="sec-sub">Cuatro fases, cada una entregable por sí sola</div>
+        </div>
+      </div>
+
+      <div class="roadmap">
+        <div class="phase">
+          <div class="ptag">Fase 1</div>
+          <h3>Tracker personal</h3>
+          <p>Auth, rutinas, ejercicios, registrar sesión y series, historial, peso corporal. El reemplazo directo del Atajo + Sheets — usable en tu próximo entrenamiento.</p>
+        </div>
+        <div class="phase">
+          <div class="ptag">Fase 2</div>
+          <h3>Mejoras del tracker</h3>
+          <p>Timer de descanso con notificación, PRs automáticos, gráfico de progreso por ejercicio, repetir sesión anterior, ajustes de PWA (instalación, offline básico de solo lectura).</p>
+        </div>
+        <div class="phase">
+          <div class="ptag">Fase 3</div>
+          <h3>Profesores</h3>
+          <p>Un usuario puede operar como profesor: invitar alumnos, crear una biblioteca de rutinas, asignarlas (<code class="mono">routine_assignments</code>) y ver el progreso de cada alumno. Sin gimnasios todavía — relación directa profesor↔alumno.</p>
+        </div>
+        <div class="phase">
+          <div class="ptag">Fase 4</div>
+          <h3>Gimnasios</h3>
+          <p>Entidad <code class="mono">gyms</code> activa, <code class="mono">gym_memberships</code> con roles, administración de profesores y alumnos por gimnasio. Recién acá vale la pena pensar en membresías y estadísticas agregadas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 RIESGOS -->
+    <section class="spec" id="s11">
+      <div class="sec-head">
+        <div class="sec-num">11</div>
+        <div class="sec-title">
+          <h2>Riesgos y decisiones importantes</h2>
+          <div class="sec-sub">Conviene resolver esto en el papel, no en una migración</div>
+        </div>
+      </div>
+
+      <div class="risks">
+        <div class="risk"><div class="rq">Cómo modelar rutinas</div><div class="ra">Separar <code class="mono">routine_exercises</code> (lo planeado) de <code class="mono">sets</code> (lo ejecutado) desde el día uno — ver §06. Fusionarlas es el error más caro de deshacer después.</div></div>
+        <div class="risk"><div class="rq">Cómo guardar el historial</div><div class="ra">Tratar una sesión finalizada como casi inmutable. Permitir corregir un valor puntual, no "reabrir" la sesión para reescribirla — si no, el historial deja de ser confiable como fuente de progreso real.</div></div>
+        <div class="risk"><div class="rq">Cómo manejar ejercicios</div><div class="ra">Catálogo global (owner_id null) + ejercicios propios del usuario. Definir ahora si "Press banca" y "Bench Press" son el mismo registro evita duplicados silenciosos en el progreso.</div></div>
+        <div class="risk"><div class="rq">Cómo evitar sobrescribir datos</div><div class="ra">Autoguardar cada serie apenas se confirma (no al finalizar la sesión) — si la app se cierra a mitad de entrenamiento, no se pierde nada.</div></div>
+        <div class="risk"><div class="rq">Cómo manejar usuarios</div><div class="ra">Una sola tabla <code class="mono">users</code> para todos los roles futuros. El rol vive en <code class="mono">gym_memberships</code>, no en el usuario — así alguien puede ser alumno en un gimnasio y profesor en otro sin duplicar cuenta.</div></div>
+        <div class="risk"><div class="rq">Preparar alumno/profesor/gimnasio</div><div class="ra">Columnas <code class="mono">gym_id</code> nullable en <code class="mono">routines</code> y <code class="mono">workouts</code> desde el MVP, aunque no se usen. Agregar la relación después es una migración aditiva, no una reconstrucción.</div></div>
+        <div class="risk"><div class="rq">Qué pasa si alguien deja un gimnasio</div><div class="ra">El usuario y sus entrenamientos personales nunca dependen de <code class="mono">gym_memberships</code> — esa tabla solo se borra o desactiva, nunca arrastra <code class="mono">workouts</code> con ella.</div></div>
+      </div>
+    </section>
+
+    <!-- 12 RECOMENDACION -->
+    <section class="spec" id="s12">
+      <div class="sec-head">
+        <div class="sec-num">12</div>
+        <div class="sec-title">
+          <h2>Recomendación final</h2>
+          <div class="sec-sub">Cómo arrancaría esto yo</div>
+        </div>
+      </div>
+      <div class="prose lead">
+        <p>Construiría <b style="color:var(--ink)">una sola pantalla primero y la obsesionaría hasta que se sienta mejor que el Atajo</b>: la de registrar una serie durante un ejercicio activo. Si esa pantalla no gana contra un formulario de iOS Shortcuts, ninguna otra parte del producto importa todavía. El resto del MVP —rutinas, historial, perfil— es infraestructura alrededor de esa pantalla, no el producto en sí.</p>
+        <p>Usaría el stack que ya elegiste sin dudarlo, agregando el manifest de PWA desde el principio para que viva en tu pantalla de inicio como una app real. Diseñaría las tablas de <code class="mono">gyms</code>, <code class="mono">gym_memberships</code> y <code class="mono">routine_assignments</code> en el esquema desde el día uno — cuesta poco tenerlas de más y ahorra una migración dolorosa — pero no escribiría ni una pantalla para ellas hasta la Fase 3.</p>
+        <p>Y me daría al menos un mesociclo completo (4 a 6 semanas) usando la app yo mismo, con datos reales de mis propios entrenamientos, antes de pensar en venderla. Ese uso es el que te va a decir si "dos toques por serie" es realmente lo que se siente en el gimnasio, o si hay fricción que solo aparece con el peso en las manos.</p>
+      </div>
+    </section>
+
+    <footer class="end">
+      <span>RepLog — propuesta de diseño y arquitectura</span>
+      <span>Sin código · sin dependencias · sin implementación</span>
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  try{
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.index a'));
+    var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+    if (!('IntersectionObserver' in window) || sections.length === 0) return;
+    var current = null;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          var id = '#' + entry.target.id;
+          links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === id); });
+          current = id;
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function(s){ io.observe(s); });
+    if (links[0]) links[0].classList.add('active');
+  }catch(e){}
+})();
+</script>
