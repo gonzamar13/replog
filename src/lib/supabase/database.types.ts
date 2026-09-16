@@ -228,6 +228,7 @@ export interface Database {
           weight: number | null;
           reps: number | null;
           is_failure: boolean;
+          rir: number | null;
           rest_seconds_actual: number | null;
           note: string | null;
           created_at: string;
@@ -239,6 +240,7 @@ export interface Database {
           weight?: number | null;
           reps?: number | null;
           is_failure?: boolean;
+          rir?: number | null;
           rest_seconds_actual?: number | null;
           note?: string | null;
           created_at?: string;
@@ -250,6 +252,7 @@ export interface Database {
           weight?: number | null;
           reps?: number | null;
           is_failure?: boolean;
+          rir?: number | null;
           rest_seconds_actual?: number | null;
           note?: string | null;
           created_at?: string;

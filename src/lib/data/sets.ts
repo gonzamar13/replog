@@ -10,6 +10,7 @@ export async function createSet(input: {
   weight: number | null;
   reps: number | null;
   isFailure: boolean;
+  rir?: number | null;
   note?: string | null;
 }) {
   const supabase = await createClient();
@@ -24,7 +25,10 @@ export async function createSet(input: {
     set_number: (count ?? 0) + 1,
     weight: input.weight,
     reps: input.reps,
-    is_failure: input.isFailure,
+    // RIR 0 es al fallo: se mantiene is_failure en sincronía para que
+    // el historial anterior y el nuevo se lean igual.
+    is_failure: input.isFailure || input.rir === 0,
+    rir: input.rir ?? null,
     note: input.note ?? null,
   });
 

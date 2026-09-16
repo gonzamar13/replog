@@ -115,7 +115,11 @@ export default async function WorkoutPage({
                         <span className="mx-1.5 text-faint">×</span>
                         {s.reps ?? "—"}
                       </span>
-                      {s.is_failure && <Badge tone="warning">fallo</Badge>}
+                      {s.rir === 0 || (s.rir == null && s.is_failure) ? (
+                        <Badge tone="warning">fallo</Badge>
+                      ) : s.rir != null ? (
+                        <Badge tone="neutral">RIR {s.rir}</Badge>
+                      ) : null}
                       {s.note && (
                         <span className="max-w-32 truncate text-[12px] text-faint">
                           {s.note}
@@ -156,7 +160,7 @@ export default async function WorkoutPage({
   /* ── Sesión en curso ────────────────────────────────────────── */
   return (
     <RestTimerProvider>
-      <div className="mx-auto w-full max-w-xl px-4 pb-44 lg:px-8">
+      <div className="mx-auto w-full max-w-xl px-4 pb-2 lg:px-8">
         <header className="sticky top-0 z-30 -mx-4 mb-4 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
@@ -204,45 +208,48 @@ export default async function WorkoutPage({
           )}
         </header>
 
-        <div className="space-y-8">
+        {/* Mazo horizontal: un ejercicio por tarjeta, a pantalla
+            completa. scroll-snap nativo — sin librerías de gestos,
+            funciona con el dedo, con trackpad y con teclado. */}
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 lg:-mx-8 lg:px-8">
           {logs.map(({ we, currentSets, previousSets }) => {
             const exercise = exerciseById.get(we.exercise_id);
             if (!exercise) return null;
             const target = targetByExercise.get(we.exercise_id);
 
             return (
-              <ExerciseLogger
+              <section
                 key={we.id}
-                workoutId={id}
-                workoutExerciseId={we.id}
-                exercise={exercise}
-                previousSets={previousSets}
-                currentSets={currentSets}
-                targetSets={target?.target_sets ?? null}
-                targetReps={
-                  target
-                    ? repsLabel(target.target_reps_min, target.target_reps_max)
-                    : null
-                }
-                restSeconds={target?.target_rest_seconds ?? 90}
-              />
+                id={`ex-${we.id}`}
+                className="h-[calc(100dvh-15rem)] min-h-96 w-full shrink-0 snap-center scroll-ml-4"
+              >
+                <ExerciseLogger
+                  workoutId={id}
+                  workoutExerciseId={we.id}
+                  exercise={exercise}
+                  previousSets={previousSets}
+                  currentSets={currentSets}
+                  targetSets={target?.target_sets ?? null}
+                  targetReps={
+                    target
+                      ? repsLabel(target.target_reps_min, target.target_reps_max)
+                      : null
+                  }
+                  restSeconds={target?.target_rest_seconds ?? 90}
+                />
+              </section>
             );
           })}
 
-          {logs.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
-              Agregá el primer ejercicio para empezar a registrar.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-8 rounded-2xl border border-dashed border-line p-4">
-          <SectionTitle>Agregar ejercicio</SectionTitle>
-          <ExercisePicker
-            exercises={exercises}
-            action={addExerciseAction}
-            hiddenFields={{ workoutId: id }}
-          />
+          {/* Última tarjeta del mazo: sumar un ejercicio */}
+          <section className="h-[calc(100dvh-15rem)] min-h-96 w-full shrink-0 snap-center overflow-y-auto">
+            <SectionTitle>Agregar ejercicio</SectionTitle>
+            <ExercisePicker
+              exercises={exercises}
+              action={addExerciseAction}
+              hiddenFields={{ workoutId: id }}
+            />
+          </section>
         </div>
       </div>
 

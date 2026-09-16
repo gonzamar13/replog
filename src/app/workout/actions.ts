@@ -35,12 +35,14 @@ export async function logSetAction(formData: FormData) {
   const workoutExerciseId = formData.get("workoutExerciseId") as string;
   const weightRaw = formData.get("weight") as string;
   const repsRaw = formData.get("reps") as string;
+  const rirRaw = formData.get("rir") as string;
 
   await createSet({
     workoutExerciseId,
     weight: weightRaw ? Number(weightRaw) : null,
     reps: repsRaw ? Number(repsRaw) : null,
     isFailure: formData.get("isFailure") === "on",
+    rir: rirRaw === "" || rirRaw == null ? null : Number(rirRaw),
     note: (formData.get("note") as string)?.trim() || null,
   });
 
