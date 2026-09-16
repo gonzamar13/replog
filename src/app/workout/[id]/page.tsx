@@ -1,11 +1,11 @@
+import { requireUser } from "@/lib/auth";
 import { getLastLoggedSets, listExercises } from "@/lib/data/exercises";
 import {
   getSetsForWorkoutExercise,
   getWorkout,
   getWorkoutExercises,
 } from "@/lib/data/workouts";
-import { createClient } from "@/lib/supabase/server";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { addExerciseAction, finishWorkoutAction } from "../actions";
 import { ExerciseLogger } from "./exercise-logger";
 
@@ -16,11 +16,7 @@ export default async function WorkoutPage({
 }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  await requireUser();
 
   // getWorkout ya está limitado por RLS al dueño — si el id es de otro
   // usuario o no existe, esto devuelve null.

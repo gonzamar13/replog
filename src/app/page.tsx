@@ -1,20 +1,12 @@
+import { requireUser } from "@/lib/auth";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getActiveWorkout } from "@/lib/data/workouts";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SignOutButton } from "./sign-out-button";
 import { startWorkoutAction } from "./workout/actions";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const user = await requireUser();
 
   const [profile, activeWorkout] = await Promise.all([
     getCurrentProfile(),
@@ -44,6 +36,11 @@ export default async function Home() {
           </button>
         </form>
       )}
+
+      <nav className="flex w-full max-w-xs justify-center gap-6 text-sm text-neutral-500">
+        <Link href="/rutinas">📚 Rutinas</Link>
+        <Link href="/historial">📈 Historial</Link>
+      </nav>
 
       <SignOutButton />
     </main>

@@ -12,12 +12,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Modo claro fijo por ahora — no diseñamos un modo oscuro propio
+   todavía, así que no dejamos que el sistema operativo lo fuerce. */
 
 body {
   background: var(--background);
