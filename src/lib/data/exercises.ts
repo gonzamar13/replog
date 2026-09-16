@@ -18,6 +18,26 @@ export async function listExercises() {
   return data;
 }
 
+export async function createExercise(input: {
+  name: string;
+  muscleGroup: string | null;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autenticado");
+
+  const { error } = await supabase.from("exercises").insert({
+    owner_id: user.id,
+    name: input.name,
+    muscle_group: input.muscleGroup,
+    is_custom: true,
+  });
+
+  if (error) throw error;
+}
+
 // Las series de la última sesión (ya finalizada) en la que se hizo este
 // ejercicio — es lo que se muestra como referencia y lo que prellena el
 // peso/reps de la serie nueva. RLS ya limita todo esto al usuario actual.

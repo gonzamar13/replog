@@ -5,6 +5,7 @@ import {
   addExerciseToWorkout,
   createWorkout,
   finishWorkout,
+  repeatWorkout,
 } from "@/lib/data/workouts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -12,6 +13,12 @@ import { redirect } from "next/navigation";
 export async function startWorkoutAction() {
   const workoutId = await createWorkout();
   redirect(`/workout/${workoutId}`);
+}
+
+export async function repeatWorkoutAction(formData: FormData) {
+  const sourceWorkoutId = formData.get("workoutId") as string;
+  const newWorkoutId = await repeatWorkout(sourceWorkoutId);
+  redirect(`/workout/${newWorkoutId}`);
 }
 
 export async function addExerciseAction(formData: FormData) {
@@ -50,5 +57,5 @@ export async function deleteSetAction(formData: FormData) {
 export async function finishWorkoutAction(formData: FormData) {
   const workoutId = formData.get("workoutId") as string;
   await finishWorkout(workoutId);
-  redirect("/");
+  redirect(`/workout/${workoutId}/resumen`);
 }

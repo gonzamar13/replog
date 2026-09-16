@@ -53,64 +53,167 @@ export async function getSetsForWorkoutExercise(workoutExerciseId: string) {
   return data ?? [];
 }
 
-export async function createWorkout() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
+// No se puede tener dos sesiones activas a la vez: cualquier "empezar
+// entrenamiento" (libre, desde rutina, o repitiendo una pasada) primero
+// chequea si ya hay una en curso y, si la hay, entra a esa en vez de crear
+// una nueva — sin importar qué botón se apretó para llegar acá.
+async function reuseActiveOrCreate(create: () => Promise<string>) {
+  const active = await getActiveWorkout();
+  if (active) return active.id;
+  return create();
+}
 
-  const { data, error } = await supabase
-    .from("workouts")
-    .insert({ user_id: user.id })
-    .select("id")
-    .single();
+export async function createWorkout() {
+  return reuseActiveOrCreate(async () => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No autenticado");
+
+    const { data, error } = await supabase
+      .from("workouts")
+      .insert({ user_id: user.id })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  });
+}
+
+async function copyExercisesInto(
+  workoutId: string,
+  sourceExercises: { exercise_id: string; position: number }[],
+) {
+  if (sourceExercises.length === 0) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("workout_exercises").insert(
+    sourceExercises.map((se) => ({
+      workout_id: workoutId,
+      exercise_id: se.exercise_id,
+      position: se.position,
+    })),
+  );
 
   if (error) throw error;
-  return data.id;
 }
 
 // Arranca una sesión precargada con los ejercicios de una rutina — es lo
 // que conecta "Rutinas" con la pantalla de registro que ya existe: después
 // de esto, todo sigue igual que un entrenamiento libre.
 export async function createWorkoutFromRoutine(routineId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autenticado");
+  return reuseActiveOrCreate(async () => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No autenticado");
 
-  const { data: routineExercises, error: routineError } = await supabase
-    .from("routine_exercises")
-    .select("exercise_id, position")
-    .eq("routine_id", routineId)
-    .order("position", { ascending: true });
+    const { data: routineExercises, error: routineError } = await supabase
+      .from("routine_exercises")
+      .select("exercise_id, position")
+      .eq("routine_id", routineId)
+      .order("position", { ascending: true });
 
-  if (routineError) throw routineError;
+    if (routineError) throw routineError;
 
-  const { data: workout, error: workoutError } = await supabase
-    .from("workouts")
-    .insert({ user_id: user.id, routine_id: routineId })
-    .select("id")
-    .single();
+    const { data: workout, error: workoutError } = await supabase
+      .from("workouts")
+      .insert({ user_id: user.id, routine_id: routineId })
+      .select("id")
+      .single();
 
-  if (workoutError) throw workoutError;
+    if (workoutError) throw workoutError;
 
-  if (routineExercises && routineExercises.length > 0) {
-    const { error: exercisesError } = await supabase
+    await copyExercisesInto(workout.id, routineExercises ?? []);
+    return workout.id;
+  });
+}
+
+// Clona los ejercicios de una sesión pasada (haya venido de una rutina o
+// libre) como punto de partida de una nueva.
+export async function repeatWorkout(sourceWorkoutId: string) {
+  return reuseActiveOrCreate(async () => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("No autenticado");
+
+    const { data: source } = await supabase
+      .from("workouts")
+      .select("routine_id")
+      .eq("id", sourceWorkoutId)
+      .maybeSingle();
+
+    const { data: sourceExercises } = await supabase
       .from("workout_exercises")
-      .insert(
-        routineExercises.map((re) => ({
-          workout_id: workout.id,
-          exercise_id: re.exercise_id,
-          position: re.position,
-        })),
-      );
+      .select("exercise_id, position")
+      .eq("workout_id", sourceWorkoutId)
+      .order("position", { ascending: true });
 
-    if (exercisesError) throw exercisesError;
+    const { data: workout, error: workoutError } = await supabase
+      .from("workouts")
+      .insert({ user_id: user.id, routine_id: source?.routine_id ?? null })
+      .select("id")
+      .single();
+
+    if (workoutError) throw workoutError;
+
+    await copyExercisesInto(workout.id, sourceExercises ?? []);
+    return workout.id;
+  });
+}
+
+export async function getWorkoutSummary(workoutId: string) {
+  const supabase = await createClient();
+
+  const { data: workout } = await supabase
+    .from("workouts")
+    .select("started_at, ended_at")
+    .eq("id", workoutId)
+    .maybeSingle();
+
+  const { data: workoutExercises } = await supabase
+    .from("workout_exercises")
+    .select("id")
+    .eq("workout_id", workoutId);
+
+  const weIds = (workoutExercises ?? []).map((we) => we.id);
+
+  let totalSets = 0;
+  let totalVolume = 0;
+
+  if (weIds.length > 0) {
+    const { data: sets } = await supabase
+      .from("sets")
+      .select("weight, reps")
+      .in("workout_exercise_id", weIds);
+
+    totalSets = sets?.length ?? 0;
+    totalVolume = (sets ?? []).reduce(
+      (sum, s) => sum + (s.weight ?? 0) * (s.reps ?? 0),
+      0,
+    );
   }
 
-  return workout.id;
+  const durationMinutes =
+    workout?.ended_at && workout.started_at
+      ? Math.round(
+          (new Date(workout.ended_at).getTime() -
+            new Date(workout.started_at).getTime()) /
+            60000,
+        )
+      : null;
+
+  return {
+    exerciseCount: workoutExercises?.length ?? 0,
+    totalSets,
+    totalVolume,
+    durationMinutes,
+  };
 }
 
 export async function listFinishedWorkouts() {

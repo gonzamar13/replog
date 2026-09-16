@@ -73,12 +73,40 @@ export interface Database {
         };
         Relationships: [];
       };
+      routine_groups: {
+        Row: {
+          id: string;
+          owner_id: string;
+          name: string;
+          starts_on: string | null;
+          ends_on: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          name: string;
+          starts_on?: string | null;
+          ends_on?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          name?: string;
+          starts_on?: string | null;
+          ends_on?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       routines: {
         Row: {
           id: string;
           owner_id: string;
           gym_id: string | null;
           created_by: string | null;
+          group_id: string | null;
           name: string;
           created_at: string;
         };
@@ -87,6 +115,7 @@ export interface Database {
           owner_id: string;
           gym_id?: string | null;
           created_by?: string | null;
+          group_id?: string | null;
           name: string;
           created_at?: string;
         };
@@ -95,6 +124,7 @@ export interface Database {
           owner_id?: string;
           gym_id?: string | null;
           created_by?: string | null;
+          group_id?: string | null;
           name?: string;
           created_at?: string;
         };

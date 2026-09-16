@@ -17,6 +17,44 @@ export async function listRoutines() {
   return data ?? [];
 }
 
+// Agrupa las rutinas del usuario por programa, para la pantalla de
+// Rutinas: cada programa con sus rutinas, más una lista de las que no
+// pertenecen a ninguno.
+export async function listRoutinesGroupedByProgram() {
+  const [routines, groups] = await Promise.all([
+    listRoutines(),
+    (async () => {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("routine_groups")
+        .select("*")
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    })(),
+  ]);
+
+  const routinesByGroup = new Map<string, typeof routines>();
+  const ungrouped: typeof routines = [];
+
+  for (const routine of routines) {
+    if (routine.group_id) {
+      const list = routinesByGroup.get(routine.group_id) ?? [];
+      list.push(routine);
+      routinesByGroup.set(routine.group_id, list);
+    } else {
+      ungrouped.push(routine);
+    }
+  }
+
+  return {
+    groups: groups.map((group) => ({
+      group,
+      routines: routinesByGroup.get(group.id) ?? [],
+    })),
+    ungrouped,
+  };
+}
+
 export async function getRoutine(routineId: string) {
   const supabase = await createClient();
   const { data } = await supabase
@@ -39,7 +77,7 @@ export async function getRoutineExercises(routineId: string) {
   return data ?? [];
 }
 
-export async function createRoutine(name: string) {
+export async function createRoutine(name: string, groupId: string | null) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,12 +86,55 @@ export async function createRoutine(name: string) {
 
   const { data, error } = await supabase
     .from("routines")
-    .insert({ owner_id: user.id, name })
+    .insert({ owner_id: user.id, name, group_id: groupId })
     .select("id")
     .single();
 
   if (error) throw error;
   return data.id;
+}
+
+export async function renameRoutine(routineId: string, name: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("routines")
+    .update({ name })
+    .eq("id", routineId);
+
+  if (error) throw error;
+}
+
+export async function moveRoutineExercise(
+  routineId: string,
+  routineExerciseId: string,
+  direction: "up" | "down",
+) {
+  const supabase = await createClient();
+  const { data: items } = await supabase
+    .from("routine_exercises")
+    .select("id, position")
+    .eq("routine_id", routineId)
+    .order("position", { ascending: true });
+
+  if (!items) return;
+
+  const index = items.findIndex((item) => item.id === routineExerciseId);
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || swapWith < 0 || swapWith >= items.length) return;
+
+  const a = items[index];
+  const b = items[swapWith];
+
+  await Promise.all([
+    supabase
+      .from("routine_exercises")
+      .update({ position: b.position })
+      .eq("id", a.id),
+    supabase
+      .from("routine_exercises")
+      .update({ position: a.position })
+      .eq("id", b.id),
+  ]);
 }
 
 export async function deleteRoutine(routineId: string) {

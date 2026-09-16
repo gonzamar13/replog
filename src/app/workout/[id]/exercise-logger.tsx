@@ -3,6 +3,7 @@
 import type { Exercise } from "@/lib/data/exercises";
 import type { WorkoutSet } from "@/lib/data/sets";
 import { deleteSetAction, logSetAction } from "../actions";
+import { RestTimer } from "./rest-timer";
 
 export function ExerciseLogger({
   workoutId,
@@ -10,12 +11,16 @@ export function ExerciseLogger({
   exercise,
   previousSets,
   currentSets,
+  targetSets,
+  restSeconds,
 }: {
   workoutId: string;
   workoutExerciseId: string;
   exercise: Exercise;
   previousSets: WorkoutSet[] | null;
   currentSets: WorkoutSet[];
+  targetSets: number | null;
+  restSeconds: number;
 }) {
   // Referencia para prellenar la serie nueva: la última serie de esta
   // sesión si ya hay alguna, si no la última serie de la sesión anterior.
@@ -43,6 +48,12 @@ export function ExerciseLogger({
         </p>
       )}
 
+      {targetSets && (
+        <p className="mt-1 text-xs text-neutral-400">
+          Serie {Math.min(currentSets.length + 1, targetSets)} de {targetSets}
+        </p>
+      )}
+
       {currentSets.length > 0 && (
         <ul className="mt-3 space-y-1">
           {currentSets.map((s) => (
@@ -61,6 +72,10 @@ export function ExerciseLogger({
             </li>
           ))}
         </ul>
+      )}
+
+      {currentSets.length > 0 && (
+        <RestTimer key={currentSets.length} seconds={restSeconds} />
       )}
 
       {/* key fuerza el remount cuando se confirma una serie, así el

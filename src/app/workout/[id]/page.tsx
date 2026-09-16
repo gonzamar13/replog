@@ -1,12 +1,17 @@
 import { requireUser } from "@/lib/auth";
 import { getLastLoggedSets, listExercises } from "@/lib/data/exercises";
+import { getRoutineExercises } from "@/lib/data/routines";
 import {
   getSetsForWorkoutExercise,
   getWorkout,
   getWorkoutExercises,
 } from "@/lib/data/workouts";
 import { notFound } from "next/navigation";
-import { addExerciseAction, finishWorkoutAction } from "../actions";
+import {
+  addExerciseAction,
+  finishWorkoutAction,
+  repeatWorkoutAction,
+} from "../actions";
 import { ExerciseLogger } from "./exercise-logger";
 
 export default async function WorkoutPage({
@@ -25,12 +30,19 @@ export default async function WorkoutPage({
 
   const isFinished = workout.ended_at !== null;
 
-  const [workoutExercises, exercises] = await Promise.all([
+  const [workoutExercises, exercises, routineExercises] = await Promise.all([
     getWorkoutExercises(id),
     listExercises(),
+    workout.routine_id ? getRoutineExercises(workout.routine_id) : [],
   ]);
 
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+  // Si la sesión viene de una rutina, esto trae el objetivo de series y el
+  // descanso planeado por ejercicio — si no, cada ExerciseLogger usa 90s
+  // de descanso por defecto y no muestra "serie X de N".
+  const targetByExercise = new Map(
+    routineExercises.map((re) => [re.exercise_id, re]),
+  );
 
   const logs = await Promise.all(
     workoutExercises.map(async (we) => {
@@ -75,6 +87,8 @@ export default async function WorkoutPage({
             );
           }
 
+          const target = targetByExercise.get(we.exercise_id);
+
           return (
             <ExerciseLogger
               key={we.id}
@@ -83,6 +97,8 @@ export default async function WorkoutPage({
               exercise={exercise}
               previousSets={previousSets}
               currentSets={currentSets}
+              targetSets={target?.target_sets ?? null}
+              restSeconds={target?.target_rest_seconds ?? 90}
             />
           );
         })}
@@ -93,6 +109,18 @@ export default async function WorkoutPage({
           </p>
         )}
       </div>
+
+      {isFinished && (
+        <form action={repeatWorkoutAction} className="mt-4">
+          <input type="hidden" name="workoutId" value={id} />
+          <button
+            type="submit"
+            className="w-full rounded-lg border border-neutral-300 py-3 text-sm font-medium"
+          >
+            Repetir esta sesión
+          </button>
+        </form>
+      )}
 
       {!isFinished && (
         <>

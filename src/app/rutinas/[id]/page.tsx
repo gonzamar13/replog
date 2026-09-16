@@ -1,12 +1,15 @@
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
+import { getRoutineGroup } from "@/lib/data/routine-groups";
 import { getRoutine, getRoutineExercises } from "@/lib/data/routines";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   addExerciseToRoutineAction,
   deleteRoutineAction,
+  moveRoutineExerciseAction,
   removeRoutineExerciseAction,
+  renameRoutineAction,
   startWorkoutFromRoutineAction,
 } from "../actions";
 
@@ -23,24 +26,50 @@ export default async function RoutineDetailPage({
   const routine = await getRoutine(id);
   if (!routine) notFound();
 
-  const [routineExercises, exercises] = await Promise.all([
+  const [routineExercises, exercises, group] = await Promise.all([
     getRoutineExercises(id),
     listExercises(),
+    routine.group_id ? getRoutineGroup(routine.group_id) : null,
   ]);
 
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
   return (
     <main className="mx-auto max-w-md p-4 pb-28">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-1 flex items-center justify-between">
         <h1 className="text-lg font-semibold">{routine.name}</h1>
         <Link href="/rutinas" className="text-sm text-neutral-500">
           Rutinas
         </Link>
       </div>
+      {group && (
+        <p className="mb-3 text-xs text-neutral-400">{group.name}</p>
+      )}
+
+      <details className="mb-4">
+        <summary className="cursor-pointer text-sm text-neutral-500">
+          Renombrar rutina
+        </summary>
+        <form action={renameRoutineAction} className="mt-2 flex gap-2">
+          <input type="hidden" name="routineId" value={id} />
+          <input
+            type="text"
+            name="name"
+            required
+            defaultValue={routine.name}
+            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm font-medium"
+          >
+            Guardar
+          </button>
+        </form>
+      </details>
 
       <div className="space-y-2">
-        {routineExercises.map((re) => {
+        {routineExercises.map((re, index) => {
           const exercise = exerciseById.get(re.exercise_id);
           if (!exercise) return null;
           return (
@@ -60,16 +89,46 @@ export default async function RoutineDetailPage({
                     : ""}
                 </p>
               </div>
-              <form action={removeRoutineExerciseAction}>
-                <input type="hidden" name="routineId" value={id} />
-                <input type="hidden" name="routineExerciseId" value={re.id} />
-                <button
-                  type="submit"
-                  className="text-xs text-neutral-400 underline"
-                >
-                  quitar
-                </button>
-              </form>
+              <div className="flex items-center gap-2">
+                <form action={moveRoutineExerciseAction}>
+                  <input type="hidden" name="routineId" value={id} />
+                  <input type="hidden" name="routineExerciseId" value={re.id} />
+                  <input type="hidden" name="direction" value="up" />
+                  <button
+                    type="submit"
+                    disabled={index === 0}
+                    className="text-xs text-neutral-400 disabled:opacity-30"
+                  >
+                    ↑
+                  </button>
+                </form>
+                <form action={moveRoutineExerciseAction}>
+                  <input type="hidden" name="routineId" value={id} />
+                  <input type="hidden" name="routineExerciseId" value={re.id} />
+                  <input type="hidden" name="direction" value="down" />
+                  <button
+                    type="submit"
+                    disabled={index === routineExercises.length - 1}
+                    className="text-xs text-neutral-400 disabled:opacity-30"
+                  >
+                    ↓
+                  </button>
+                </form>
+                <form action={removeRoutineExerciseAction}>
+                  <input type="hidden" name="routineId" value={id} />
+                  <input
+                    type="hidden"
+                    name="routineExerciseId"
+                    value={re.id}
+                  />
+                  <button
+                    type="submit"
+                    className="text-xs text-neutral-400 underline"
+                  >
+                    quitar
+                  </button>
+                </form>
+              </div>
             </div>
           );
         })}

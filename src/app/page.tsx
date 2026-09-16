@@ -37,9 +37,14 @@ export default async function Home() {
         </form>
       )}
 
-      <nav className="flex w-full max-w-xs justify-center gap-6 text-sm text-neutral-500">
+      <nav className="flex w-full max-w-xs flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-neutral-500">
         <Link href="/rutinas">📚 Rutinas</Link>
         <Link href="/historial">📈 Historial</Link>
+        <Link href="/perfil">👤 Perfil</Link>
+        <Link href="/ejercicios">🏷️ Ejercicios</Link>
+        <Link href="/peso">⚖️ Peso</Link>
+        <Link href="/records">🏆 Récords</Link>
+        <Link href="/progreso">📊 Progreso</Link>
       </nav>
 
       <SignOutButton />

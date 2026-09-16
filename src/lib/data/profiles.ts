@@ -25,3 +25,21 @@ export async function getCurrentProfile() {
 
   return profile;
 }
+
+export async function updateProfile(input: {
+  displayName: string | null;
+  unitPref: "kg" | "lb";
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autenticado");
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_name: input.displayName, unit_pref: input.unitPref })
+    .eq("id", user.id);
+
+  if (error) throw error;
+}

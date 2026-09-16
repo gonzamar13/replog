@@ -1,10 +1,13 @@
 "use server";
 
+import { createRoutineGroup } from "@/lib/data/routine-groups";
 import {
   addExerciseToRoutine,
   createRoutine,
   deleteRoutine,
+  moveRoutineExercise,
   removeRoutineExercise,
+  renameRoutine,
 } from "@/lib/data/routines";
 import { createWorkoutFromRoutine } from "@/lib/data/workouts";
 import { revalidatePath } from "next/cache";
@@ -14,8 +17,34 @@ export async function createRoutineAction(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
   if (!name) return;
 
-  const routineId = await createRoutine(name);
+  const groupId = (formData.get("groupId") as string) || null;
+  const routineId = await createRoutine(name, groupId);
   redirect(`/rutinas/${routineId}`);
+}
+
+export async function createRoutineGroupAction(formData: FormData) {
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return;
+
+  const startsOnRaw = formData.get("startsOn") as string;
+  const endsOnRaw = formData.get("endsOn") as string;
+
+  await createRoutineGroup({
+    name,
+    startsOn: startsOnRaw || null,
+    endsOn: endsOnRaw || null,
+  });
+
+  revalidatePath("/rutinas");
+}
+
+export async function renameRoutineAction(formData: FormData) {
+  const routineId = formData.get("routineId") as string;
+  const name = (formData.get("name") as string)?.trim();
+  if (!routineId || !name) return;
+
+  await renameRoutine(routineId, name);
+  revalidatePath(`/rutinas/${routineId}`);
 }
 
 export async function addExerciseToRoutineAction(formData: FormData) {
@@ -45,6 +74,15 @@ export async function removeRoutineExerciseAction(formData: FormData) {
   const routineExerciseId = formData.get("routineExerciseId") as string;
 
   await removeRoutineExercise(routineExerciseId);
+  revalidatePath(`/rutinas/${routineId}`);
+}
+
+export async function moveRoutineExerciseAction(formData: FormData) {
+  const routineId = formData.get("routineId") as string;
+  const routineExerciseId = formData.get("routineExerciseId") as string;
+  const direction = formData.get("direction") as "up" | "down";
+
+  await moveRoutineExercise(routineId, routineExerciseId, direction);
   revalidatePath(`/rutinas/${routineId}`);
 }
 
