@@ -8,6 +8,7 @@ import {
   moveRoutineExercise,
   removeRoutineExercise,
   renameRoutine,
+  updateRoutineDays,
 } from "@/lib/data/routines";
 import { createWorkoutFromRoutine } from "@/lib/data/workouts";
 import { revalidatePath } from "next/cache";
@@ -36,6 +37,18 @@ export async function createRoutineGroupAction(formData: FormData) {
   });
 
   revalidatePath("/rutinas");
+}
+
+export async function updateRoutineDaysAction(formData: FormData) {
+  const routineId = formData.get("routineId") as string;
+  if (!routineId) return;
+
+  const days = formData.getAll("days").map((d) => Number(d));
+
+  await updateRoutineDays(routineId, days);
+  revalidatePath(`/rutinas/${routineId}`);
+  revalidatePath("/rutinas");
+  revalidatePath("/");
 }
 
 export async function renameRoutineAction(formData: FormData) {

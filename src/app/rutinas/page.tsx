@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
+import { formatDays } from "@/lib/days";
 import {
   getRoutineStats,
   listRoutinesGroupedByProgram,
@@ -41,6 +42,7 @@ function RoutineRow({ routine, stats }: { routine: Routine; stats: Stats }) {
                 ? `${stat.exerciseCount} ${stat.exerciseCount === 1 ? "ejercicio" : "ejercicios"}`
                 : "Sin ejercicios",
               stat?.avgMinutes ? `${stat.avgMinutes} min` : null,
+              formatDays(routine.days),
             ]}
           />
         </div>

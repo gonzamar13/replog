@@ -29,18 +29,21 @@ export interface Database {
         Row: {
           id: string;
           display_name: string | null;
+          username: string | null;
           unit_pref: "kg" | "lb";
           created_at: string;
         };
         Insert: {
           id: string;
           display_name?: string | null;
+          username?: string | null;
           unit_pref?: "kg" | "lb";
           created_at?: string;
         };
         Update: {
           id?: string;
           display_name?: string | null;
+          username?: string | null;
           unit_pref?: "kg" | "lb";
           created_at?: string;
         };
@@ -107,6 +110,7 @@ export interface Database {
           gym_id: string | null;
           created_by: string | null;
           group_id: string | null;
+          days: number[];
           name: string;
           created_at: string;
         };
@@ -116,6 +120,7 @@ export interface Database {
           gym_id?: string | null;
           created_by?: string | null;
           group_id?: string | null;
+          days?: number[];
           name: string;
           created_at?: string;
         };
@@ -125,6 +130,7 @@ export interface Database {
           gym_id?: string | null;
           created_by?: string | null;
           group_id?: string | null;
+          days?: number[];
           name?: string;
           created_at?: string;
         };

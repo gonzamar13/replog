@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { IconSubmit, SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
+import { WEEK_DAYS } from "@/lib/days";
 import { listExercises } from "@/lib/data/exercises";
 import { getRoutineGroup } from "@/lib/data/routine-groups";
 import { getRoutine, getRoutineExercises } from "@/lib/data/routines";
@@ -29,6 +30,7 @@ import {
   removeRoutineExerciseAction,
   renameRoutineAction,
   startWorkoutFromRoutineAction,
+  updateRoutineDaysAction,
 } from "../actions";
 
 export default async function RoutineDetailPage({
@@ -69,6 +71,37 @@ export default async function RoutineDetailPage({
           </>
         }
       />
+
+      {/* Días de la semana en que toca esta rutina */}
+      <form action={updateRoutineDaysAction} className="mb-7">
+        <input type="hidden" name="routineId" value={id} />
+        <SectionTitle>Días</SectionTitle>
+        <div className="flex gap-1.5">
+          {WEEK_DAYS.map((day) => (
+            <label key={day.value} className="flex-1 cursor-pointer">
+              <input
+                type="checkbox"
+                name="days"
+                value={day.value}
+                defaultChecked={(routine.days ?? []).includes(day.value)}
+                aria-label={day.label}
+                className="peer sr-only"
+              />
+              <span className="flex h-10 items-center justify-center rounded-xl border border-line bg-surface text-[13px] font-semibold text-muted transition-colors peer-checked:border-accent/40 peer-checked:bg-accent/15 peer-checked:text-accent peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-accent">
+                {day.short}
+              </span>
+            </label>
+          ))}
+        </div>
+        <SubmitButton
+          variant="ghost"
+          size="sm"
+          className="mt-2"
+          pendingLabel="Guardando…"
+        >
+          Guardar días
+        </SubmitButton>
+      </form>
 
       <SectionTitle>Ejercicios</SectionTitle>
       <ul className="space-y-2">

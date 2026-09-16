@@ -15,6 +15,7 @@ import {
 import { Sparkbars } from "@/components/ui/chart";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
+import { formatDays, todayIso } from "@/lib/days";
 import { listExercises } from "@/lib/data/exercises";
 import { getHomeSummary } from "@/lib/data/home";
 import { getCurrentProfile } from "@/lib/data/profiles";
@@ -22,6 +23,7 @@ import { getPersonalRecords } from "@/lib/data/progress";
 import { listRoutines } from "@/lib/data/routines";
 import { getActiveWorkout } from "@/lib/data/workouts";
 import Link from "next/link";
+import { startWorkoutFromRoutineAction } from "./rutinas/actions";
 import { startWorkoutAction } from "./workout/actions";
 
 export default async function Home() {
@@ -43,9 +45,12 @@ export default async function Home() {
 
   const last = summary.lastWorkout;
   const lastRoutine = last?.routineId ? routineById.get(last.routineId) : null;
-  // La rutina sugerida es la última que usaste; si nunca usaste una,
-  // la primera que tengas guardada.
-  const suggested = lastRoutine ?? routines[0] ?? null;
+  // Prioridad: la rutina que toca hoy según sus días; si no hay ninguna
+  // agendada, la última que usaste; si nunca usaste una, la primera.
+  const today = todayIso();
+  const todayRoutine =
+    routines.find((r) => (r.days ?? []).includes(today)) ?? null;
+  const suggested = todayRoutine ?? lastRoutine ?? routines[0] ?? null;
   const topSetExercise = summary.topSet
     ? exerciseById.get(summary.topSet.exerciseId)
     : null;
@@ -80,6 +85,20 @@ export default async function Home() {
               <PlayIcon width={18} height={18} />
               Continuar entrenamiento
             </ButtonLink>
+          ) : todayRoutine ? (
+            /* Si hoy toca una rutina, el botón principal la arranca
+               directo: un toque desde abrir la app hasta registrar. */
+            <form action={startWorkoutFromRoutineAction}>
+              <input type="hidden" name="routineId" value={todayRoutine.id} />
+              <SubmitButton
+                size="lg"
+                className="w-full"
+                pendingLabel="Preparando…"
+              >
+                <PlayIcon width={18} height={18} />
+                Comenzar {todayRoutine.name}
+              </SubmitButton>
+            </form>
           ) : (
             <form action={startWorkoutAction}>
               <SubmitButton
@@ -100,14 +119,30 @@ export default async function Home() {
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] uppercase tracking-[0.1em] text-faint">
-                  {lastRoutine ? "Tu última rutina" : "Rutina guardada"}
+                  {todayRoutine
+                    ? "Hoy te toca"
+                    : lastRoutine
+                      ? "Tu última rutina"
+                      : "Rutina guardada"}
                 </p>
                 <p className="mt-0.5 truncate font-semibold">
                   {suggested.name}
                 </p>
+                <MetaLine
+                  className="mt-0.5"
+                  items={[formatDays(suggested.days)]}
+                />
               </div>
               <ChevronRightIcon className="shrink-0 text-faint" />
             </Link>
+          )}
+
+          {todayRoutine && !activeWorkout && (
+            <form action={startWorkoutAction} className="mt-2 text-center">
+              <SubmitButton variant="ghost" size="sm" pendingLabel="…">
+                O entrenar libre
+              </SubmitButton>
+            </form>
           )}
 
           {/* Último entrenamiento */}

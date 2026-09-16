@@ -149,6 +149,18 @@ export async function createRoutine(name: string, groupId: string | null) {
   return data.id;
 }
 
+export async function updateRoutineDays(routineId: string, days: number[]) {
+  const supabase = await createClient();
+  const clean = [...new Set(days)].filter((d) => d >= 1 && d <= 7).sort();
+
+  const { error } = await supabase
+    .from("routines")
+    .update({ days: clean })
+    .eq("id", routineId);
+
+  if (error) throw error;
+}
+
 export async function renameRoutine(routineId: string, name: string) {
   const supabase = await createClient();
   const { error } = await supabase

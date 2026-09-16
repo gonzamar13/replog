@@ -6,24 +6,14 @@ import {
   TrophyIcon,
   UserIcon,
 } from "@/components/icons";
-import {
-  Field,
-  Input,
-  Page,
-  PageHeader,
-  Panel,
-  SectionTitle,
-  Select,
-  StatTile,
-} from "@/components/ui";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { Page, PageHeader, Panel, SectionTitle, StatTile } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { listBodyWeightLogs } from "@/lib/data/body-weight";
 import { getHomeSummary } from "@/lib/data/home";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getPersonalRecords } from "@/lib/data/progress";
 import Link from "next/link";
-import { updateProfileAction } from "./actions";
+import { ProfileForm } from "./profile-form";
 
 const LINKS = [
   { href: "/peso", label: "Peso corporal", Icon: ScaleIcon },
@@ -55,7 +45,9 @@ export default async function PerfilPage() {
           <p className="truncate text-lg font-semibold">
             {profile?.display_name || user.email?.split("@")[0]}
           </p>
-          <p className="truncate text-[13px] text-faint">{user.email}</p>
+          <p className="truncate text-[13px] text-faint">
+            {profile?.username ? `@${profile.username}` : user.email}
+          </p>
         </div>
       </div>
 
@@ -90,27 +82,11 @@ export default async function PerfilPage() {
       <section className="mt-8">
         <SectionTitle>Ajustes</SectionTitle>
         <Panel>
-          <form action={updateProfileAction} className="space-y-3">
-            <Field label="Nombre">
-              <Input
-                type="text"
-                name="displayName"
-                defaultValue={profile?.display_name ?? ""}
-                placeholder="Cómo querés que te salude la app"
-              />
-            </Field>
-
-            <Field label="Unidad de peso">
-              <Select name="unitPref" defaultValue={unit}>
-                <option value="kg">Kilogramos (kg)</option>
-                <option value="lb">Libras (lb)</option>
-              </Select>
-            </Field>
-
-            <SubmitButton className="w-full" pendingLabel="Guardando…">
-              Guardar cambios
-            </SubmitButton>
-          </form>
+          <ProfileForm
+            displayName={profile?.display_name ?? ""}
+            username={profile?.username ?? ""}
+            unitPref={unit}
+          />
         </Panel>
       </section>
 
