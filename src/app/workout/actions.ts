@@ -4,6 +4,7 @@ import { createSet, deleteSet } from "@/lib/data/sets";
 import {
   addExerciseToWorkout,
   createWorkout,
+  deleteWorkout,
   finishWorkout,
   repeatWorkout,
 } from "@/lib/data/workouts";
@@ -55,6 +56,16 @@ export async function deleteSetAction(formData: FormData) {
 
   await deleteSet(setId);
   revalidatePath(`/workout/${workoutId}`);
+}
+
+export async function deleteWorkoutAction(formData: FormData) {
+  const workoutId = formData.get("workoutId") as string;
+  const redirectTo = (formData.get("redirectTo") as string) || "/historial";
+
+  await deleteWorkout(workoutId);
+  revalidatePath("/historial");
+  revalidatePath("/");
+  redirect(redirectTo);
 }
 
 export async function finishWorkoutAction(formData: FormData) {

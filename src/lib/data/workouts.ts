@@ -288,6 +288,15 @@ export async function listFinishedWorkouts() {
   return data ?? [];
 }
 
+// Borra la sesión entera. workout_exercises y sets caen solos por el
+// ON DELETE CASCADE del esquema, y RLS garantiza que solo se pueda
+// borrar una sesión propia.
+export async function deleteWorkout(workoutId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("workouts").delete().eq("id", workoutId);
+  if (error) throw error;
+}
+
 export async function finishWorkout(workoutId: string) {
   const supabase = await createClient();
   const { error } = await supabase

@@ -1,11 +1,14 @@
 import { TrophyIcon } from "@/components/icons";
 import { ButtonLink, Page, StatTile } from "@/components/ui";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { listExercises } from "@/lib/data/exercises";
 import { getSessionPRs } from "@/lib/data/progress";
 import { getRoutine } from "@/lib/data/routines";
 import { getWorkout, getWorkoutSummary } from "@/lib/data/workouts";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { deleteWorkoutAction } from "../../actions";
 
 export default async function WorkoutSummaryPage({
   params,
@@ -93,13 +96,34 @@ export default async function WorkoutSummaryPage({
         </section>
       )}
 
-      <div className="mt-8 flex flex-col gap-2 sm:flex-row">
-        <ButtonLink href="/" className="flex-1">
+      {/* Una sola acción principal; lo demás baja de jerarquía en vez
+          de competir con dos botones del mismo peso */}
+      <div className="mt-10 space-y-4">
+        <ButtonLink href="/" size="lg" className="w-full">
           Listo
         </ButtonLink>
-        <ButtonLink href={`/workout/${id}`} variant="secondary" className="flex-1">
-          Ver detalle
-        </ButtonLink>
+
+        <p className="text-center">
+          <Link
+            href={`/workout/${id}`}
+            className="text-[13px] text-muted transition-colors hover:text-ink"
+          >
+            Ver detalle de la sesión
+          </Link>
+        </p>
+
+        <details className="text-center">
+          <summary className="cursor-pointer list-none text-[13px] text-faint transition-colors hover:text-muted">
+            Eliminar entrenamiento
+          </summary>
+          <form action={deleteWorkoutAction} className="mt-2">
+            <input type="hidden" name="workoutId" value={id} />
+            <input type="hidden" name="redirectTo" value="/historial" />
+            <SubmitButton variant="danger" size="sm" pendingLabel="Eliminando…">
+              Sí, eliminar esta sesión
+            </SubmitButton>
+          </form>
+        </details>
       </div>
     </Page>
   );

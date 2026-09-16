@@ -1,5 +1,5 @@
-import { CheckIcon, ChevronLeftIcon, FlagIcon } from "@/components/icons";
 import { ExercisePicker } from "@/components/exercise-picker";
+import { CheckIcon, ChevronLeftIcon, FlagIcon } from "@/components/icons";
 import { Badge, ButtonLink, cn, SectionTitle } from "@/components/ui";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
@@ -14,6 +14,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   addExerciseAction,
+  deleteWorkoutAction,
   finishWorkoutAction,
   repeatWorkoutAction,
 } from "../actions";
@@ -153,121 +154,165 @@ export default async function WorkoutPage({
             Ver resumen
           </ButtonLink>
         </div>
+
+        {/* Destructivo: detrás de un paso, nunca a un toque de distancia */}
+        <details className="mt-6">
+          <summary className="cursor-pointer list-none text-[13px] text-faint transition-colors hover:text-muted">
+            Eliminar entrenamiento
+          </summary>
+          <form action={deleteWorkoutAction} className="mt-2">
+            <input type="hidden" name="workoutId" value={id} />
+            <input type="hidden" name="redirectTo" value="/historial" />
+            <SubmitButton variant="danger" size="sm" pendingLabel="Eliminando…">
+              Sí, eliminar esta sesión
+            </SubmitButton>
+          </form>
+        </details>
       </main>
     );
   }
 
-  /* ── Sesión en curso ────────────────────────────────────────── */
+  /* ── Sesión en curso ────────────────────────────────────────────
+     Columna flexible: el mazo ocupa lo que sobra y se encoge solo
+     cuando aparece la barra de descanso. Antes la altura era un
+     calc() fijo y el descanso terminaba tapando el botón. */
   return (
     <RestTimerProvider>
-      <div className="mx-auto w-full max-w-xl px-4 pb-2 lg:px-8">
-        <header className="sticky top-0 z-30 -mx-4 mb-4 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur lg:-mx-8 lg:px-8">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">
-                {routine?.name ?? "Entrenamiento libre"}
-              </p>
-              <p className="text-[11px] uppercase tracking-[0.1em] text-faint">
-                {totalSets} {totalSets === 1 ? "serie" : "series"} ·{" "}
-                {logs.length} {logs.length === 1 ? "ejercicio" : "ejercicios"}
-              </p>
-            </div>
-            <p className="shrink-0 text-2xl font-bold tracking-tight text-accent">
-              <ElapsedTime startedAt={workout.started_at} />
-            </p>
-          </div>
+      <div className="flex h-dvh flex-col overflow-hidden">
+        <header className="shrink-0 border-b border-line px-4 py-3 lg:px-8">
+          <div className="mx-auto w-full max-w-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {routine?.name ?? "Entrenamiento libre"}
+                </p>
+                <p className="text-[11px] uppercase tracking-[0.1em] text-faint">
+                  {totalSets} {totalSets === 1 ? "serie" : "series"} ·{" "}
+                  {logs.length} {logs.length === 1 ? "ejercicio" : "ejercicios"}
+                </p>
+              </div>
 
-          {/* Salto rápido entre ejercicios: el punto se enciende cuando
-              ese ejercicio ya cumplió su objetivo de series */}
-          {logs.length > 1 && (
-            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 lg:-mx-8 lg:px-8">
-              {logs.map(({ we, currentSets }) => {
-                const exercise = exerciseById.get(we.exercise_id);
-                if (!exercise) return null;
-                const target = targetByExercise.get(we.exercise_id);
-                const complete =
-                  target?.target_sets != null &&
-                  currentSets.length >= target.target_sets;
-                return (
-                  <a
-                    key={we.id}
-                    href={`#ex-${we.id}`}
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1 text-[12px] font-medium transition-colors",
-                      complete
-                        ? "border-accent/30 bg-accent/10 text-accent"
-                        : "text-muted hover:text-ink",
-                    )}
+              <div className="flex shrink-0 items-center gap-3">
+                <p className="text-2xl font-bold tracking-tight text-accent">
+                  <ElapsedTime startedAt={workout.started_at} />
+                </p>
+                {/* Finalizar se toca una vez por sesión: no se queda con
+                    el mejor lugar de la pantalla, que es para registrar */}
+                <form action={finishWorkoutAction}>
+                  <input type="hidden" name="workoutId" value={id} />
+                  <SubmitButton
+                    variant="secondary"
+                    size="sm"
+                    pendingLabel="Cerrando…"
                   >
-                    {complete && <CheckIcon width={12} height={12} />}
-                    {exercise.name}
-                  </a>
-                );
-              })}
+                    <FlagIcon width={14} height={14} />
+                    Finalizar
+                  </SubmitButton>
+                </form>
+              </div>
             </div>
-          )}
+
+            {/* Salto rápido entre ejercicios: el check se enciende cuando
+                ese ejercicio ya cumplió su objetivo de series */}
+            {logs.length > 1 && (
+              <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-0.5 lg:-mx-8 lg:px-8">
+                {logs.map(({ we, currentSets }) => {
+                  const exercise = exerciseById.get(we.exercise_id);
+                  if (!exercise) return null;
+                  const target = targetByExercise.get(we.exercise_id);
+                  const complete =
+                    target?.target_sets != null &&
+                    currentSets.length >= target.target_sets;
+                  return (
+                    <a
+                      key={we.id}
+                      href={`#ex-${we.id}`}
+                      className={cn(
+                        "flex shrink-0 items-center gap-1.5 rounded-full border border-line px-3 py-1 text-[12px] font-medium transition-colors",
+                        complete
+                          ? "border-accent/30 bg-accent/10 text-accent"
+                          : "text-muted hover:text-ink",
+                      )}
+                    >
+                      {complete && <CheckIcon width={12} height={12} />}
+                      {exercise.name}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </header>
 
-        {/* Mazo horizontal: un ejercicio por tarjeta, a pantalla
-            completa. scroll-snap nativo — sin librerías de gestos,
-            funciona con el dedo, con trackpad y con teclado. */}
-        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 lg:-mx-8 lg:px-8">
-          {logs.map(({ we, currentSets, previousSets }) => {
-            const exercise = exerciseById.get(we.exercise_id);
-            if (!exercise) return null;
-            const target = targetByExercise.get(we.exercise_id);
+        {/* Mazo horizontal: un ejercicio por tarjeta, scroll-snap nativo */}
+        <div className="min-h-0 flex-1">
+          <div className="mx-auto flex h-full w-full max-w-xl snap-x snap-mandatory gap-4 overflow-x-auto px-4 py-3 lg:px-8">
+            {logs.map(({ we, currentSets, previousSets }) => {
+              const exercise = exerciseById.get(we.exercise_id);
+              if (!exercise) return null;
+              const target = targetByExercise.get(we.exercise_id);
 
-            return (
-              <section
-                key={we.id}
-                id={`ex-${we.id}`}
-                className="h-[calc(100dvh-15rem)] min-h-96 w-full shrink-0 snap-center scroll-ml-4"
-              >
-                <ExerciseLogger
-                  workoutId={id}
-                  workoutExerciseId={we.id}
-                  exercise={exercise}
-                  previousSets={previousSets}
-                  currentSets={currentSets}
-                  targetSets={target?.target_sets ?? null}
-                  targetReps={
-                    target
-                      ? repsLabel(target.target_reps_min, target.target_reps_max)
-                      : null
-                  }
-                  restSeconds={target?.target_rest_seconds ?? 90}
-                />
-              </section>
-            );
-          })}
+              return (
+                <section
+                  key={we.id}
+                  id={`ex-${we.id}`}
+                  className="h-full w-full shrink-0 snap-center scroll-ml-4"
+                >
+                  <ExerciseLogger
+                    workoutId={id}
+                    workoutExerciseId={we.id}
+                    exercise={exercise}
+                    previousSets={previousSets}
+                    currentSets={currentSets}
+                    targetSets={target?.target_sets ?? null}
+                    targetReps={
+                      target
+                        ? repsLabel(
+                            target.target_reps_min,
+                            target.target_reps_max,
+                          )
+                        : null
+                    }
+                    restSeconds={target?.target_rest_seconds ?? 90}
+                  />
+                </section>
+              );
+            })}
 
-          {/* Última tarjeta del mazo: sumar un ejercicio */}
-          <section className="h-[calc(100dvh-15rem)] min-h-96 w-full shrink-0 snap-center overflow-y-auto">
-            <SectionTitle>Agregar ejercicio</SectionTitle>
-            <ExercisePicker
-              exercises={exercises}
-              action={addExerciseAction}
-              hiddenFields={{ workoutId: id }}
-            />
-          </section>
+            {/* Última tarjeta del mazo: sumar un ejercicio */}
+            <section className="h-full w-full shrink-0 snap-center overflow-y-auto scroll-ml-4">
+              <SectionTitle>Agregar ejercicio</SectionTitle>
+              <ExercisePicker
+                exercises={exercises}
+                action={addExerciseAction}
+                hiddenFields={{ workoutId: id }}
+              />
+
+              <details className="mt-6">
+                <summary className="cursor-pointer list-none text-[13px] text-faint transition-colors hover:text-muted">
+                  Descartar este entrenamiento
+                </summary>
+                <form action={deleteWorkoutAction} className="mt-2">
+                  <input type="hidden" name="workoutId" value={id} />
+                  <input type="hidden" name="redirectTo" value="/" />
+                  <SubmitButton
+                    variant="danger"
+                    size="sm"
+                    pendingLabel="Descartando…"
+                  >
+                    Sí, descartar sin guardar
+                  </SubmitButton>
+                </form>
+              </details>
+            </section>
+          </div>
         </div>
-      </div>
 
-      {/* Pie fijo: descanso + única acción de cierre */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/95 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:px-8">
-        <div className="mx-auto w-full max-w-xl">
-          <RestTimerBar />
-          <form action={finishWorkoutAction}>
-            <input type="hidden" name="workoutId" value={id} />
-            <SubmitButton
-              variant="secondary"
-              className="w-full"
-              pendingLabel="Cerrando…"
-            >
-              <FlagIcon width={16} height={16} />
-              Finalizar entrenamiento
-            </SubmitButton>
-          </form>
+        {/* Pie: solo el descanso. Al aparecer, el mazo se encoge solo. */}
+        <div className="shrink-0 px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))] lg:px-8">
+          <div className="mx-auto w-full max-w-xl">
+            <RestTimerBar />
+          </div>
         </div>
       </div>
     </RestTimerProvider>
