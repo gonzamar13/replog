@@ -91,7 +91,7 @@ export async function getRoutineStats() {
 
   const stats = new Map<
     string,
-    { exerciseCount: number; avgMinutes: number | null }
+    { exerciseCount: number; typicalMinutes: number | null; sessions: number }
   >();
 
   for (const routineId of new Set([
@@ -101,13 +101,26 @@ export async function getRoutineStats() {
     const list = durations.get(routineId) ?? [];
     stats.set(routineId, {
       exerciseCount: exerciseCount.get(routineId) ?? 0,
-      avgMinutes: list.length
-        ? Math.round(list.reduce((a, b) => a + b, 0) / list.length)
-        : null,
+      typicalMinutes: median(list),
+      sessions: list.length,
     });
   }
 
   return stats;
+}
+
+/**
+ * Mediana, no promedio: "finalizar" es manual, así que basta olvidarse
+ * de cerrar una sesión una vez para que un valor de 3 horas arruine el
+ * promedio para siempre. La mediana ignora ese tipo de outlier.
+ */
+function median(values: number[]) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[mid]
+    : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
 export async function getRoutine(routineId: string) {
@@ -147,6 +160,19 @@ export async function createRoutine(name: string, groupId: string | null) {
 
   if (error) throw error;
   return data.id;
+}
+
+export async function updateRoutineGroup(
+  routineId: string,
+  groupId: string | null,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("routines")
+    .update({ group_id: groupId })
+    .eq("id", routineId);
+
+  if (error) throw error;
 }
 
 export async function updateRoutineDays(routineId: string, days: number[]) {

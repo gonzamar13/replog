@@ -20,7 +20,7 @@ import { listExercises } from "@/lib/data/exercises";
 import { getHomeSummary } from "@/lib/data/home";
 import { getCurrentProfile } from "@/lib/data/profiles";
 import { getPersonalRecords } from "@/lib/data/progress";
-import { listRoutines } from "@/lib/data/routines";
+import { getRoutineStats, listRoutines } from "@/lib/data/routines";
 import { getActiveWorkout } from "@/lib/data/workouts";
 import Link from "next/link";
 import { startWorkoutFromRoutineAction } from "./rutinas/actions";
@@ -38,6 +38,7 @@ export default async function Home() {
       listExercises(),
       getPersonalRecords(),
     ]);
+  const routineStats = await getRoutineStats();
 
   const name = profile?.display_name || user.email?.split("@")[0] || "";
   const routineById = new Map(routines.map((r) => [r.id, r]));
@@ -130,7 +131,15 @@ export default async function Home() {
                 </p>
                 <MetaLine
                   className="mt-0.5"
-                  items={[formatDays(suggested.days)]}
+                  items={[
+                    routineStats.get(suggested.id)?.exerciseCount
+                      ? `${routineStats.get(suggested.id)!.exerciseCount} ejercicios`
+                      : null,
+                    routineStats.get(suggested.id)?.typicalMinutes
+                      ? `~${routineStats.get(suggested.id)!.typicalMinutes} min`
+                      : null,
+                    formatDays(suggested.days),
+                  ]}
                 />
               </div>
               <ChevronRightIcon className="shrink-0 text-faint" />

@@ -1,5 +1,6 @@
-import { CheckIcon, ChevronLeftIcon, FlagIcon, PlusIcon } from "@/components/icons";
-import { Badge, ButtonLink, cn, Panel, Select } from "@/components/ui";
+import { CheckIcon, ChevronLeftIcon, FlagIcon } from "@/components/icons";
+import { ExercisePicker } from "@/components/exercise-picker";
+import { Badge, ButtonLink, cn, SectionTitle } from "@/components/ui";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
 import { getLastLoggedSets, listExercises } from "@/lib/data/exercises";
@@ -235,25 +236,14 @@ export default async function WorkoutPage({
           )}
         </div>
 
-        <Panel className="mt-8 border-dashed bg-transparent">
-          <form action={addExerciseAction} className="flex gap-2">
-            <input type="hidden" name="workoutId" value={id} />
-            <Select name="exerciseId" required defaultValue="" className="flex-1">
-              <option value="" disabled>
-                Agregar ejercicio…
-              </option>
-              {exercises.map((ex) => (
-                <option key={ex.id} value={ex.id}>
-                  {ex.muscle_group ? `${ex.muscle_group} — ` : ""}
-                  {ex.name}
-                </option>
-              ))}
-            </Select>
-            <SubmitButton variant="secondary" pendingLabel="…">
-              <PlusIcon width={16} height={16} />
-            </SubmitButton>
-          </form>
-        </Panel>
+        <div className="mt-8 rounded-2xl border border-dashed border-line p-4">
+          <SectionTitle>Agregar ejercicio</SectionTitle>
+          <ExercisePicker
+            exercises={exercises}
+            action={addExerciseAction}
+            hiddenFields={{ workoutId: id }}
+          />
+        </div>
       </div>
 
       {/* Pie fijo: descanso + única acción de cierre */}

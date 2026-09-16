@@ -2,31 +2,35 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   PlayIcon,
-  PlusIcon,
   TrashIcon,
 } from "@/components/icons";
 import {
   Badge,
-  Field,
   Input,
   MetaLine,
   Page,
   PageHeader,
-  Panel,
   SectionTitle,
   Select,
 } from "@/components/ui";
+import { ExercisePicker } from "@/components/exercise-picker";
 import { IconSubmit, SubmitButton } from "@/components/ui/submit-button";
 import { requireUser } from "@/lib/auth";
-import { WEEK_DAYS } from "@/lib/days";
+import { formatDays, WEEK_DAYS } from "@/lib/days";
 import { listExercises } from "@/lib/data/exercises";
 import { getRoutineGroup } from "@/lib/data/routine-groups";
-import { getRoutine, getRoutineExercises } from "@/lib/data/routines";
+import { listRoutineGroups } from "@/lib/data/routine-groups";
+import {
+  getRoutine,
+  getRoutineExercises,
+  getRoutineStats,
+} from "@/lib/data/routines";
 import { notFound } from "next/navigation";
 import {
   addExerciseToRoutineAction,
   deleteRoutineAction,
   moveRoutineExerciseAction,
+  moveRoutineToGroupAction,
   removeRoutineExerciseAction,
   renameRoutineAction,
   startWorkoutFromRoutineAction,
@@ -46,11 +50,16 @@ export default async function RoutineDetailPage({
   const routine = await getRoutine(id);
   if (!routine) notFound();
 
-  const [routineExercises, exercises, group] = await Promise.all([
-    getRoutineExercises(id),
-    listExercises(),
-    routine.group_id ? getRoutineGroup(routine.group_id) : null,
-  ]);
+  const [routineExercises, exercises, group, stats, allGroups] =
+    await Promise.all([
+      getRoutineExercises(id),
+      listExercises(),
+      routine.group_id ? getRoutineGroup(routine.group_id) : null,
+      getRoutineStats(),
+      listRoutineGroups(),
+    ]);
+
+  const stat = stats.get(id);
 
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 
@@ -66,8 +75,13 @@ export default async function RoutineDetailPage({
                 {group.name}
               </Badge>
             )}
-            {routineExercises.length}{" "}
-            {routineExercises.length === 1 ? "ejercicio" : "ejercicios"}
+            {[
+              `${routineExercises.length} ${routineExercises.length === 1 ? "ejercicio" : "ejercicios"}`,
+              stat?.typicalMinutes ? `~${stat.typicalMinutes} min` : null,
+              formatDays(routine.days),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </>
         }
       />
@@ -179,60 +193,15 @@ export default async function RoutineDetailPage({
       </ul>
 
       {/* Agregar ejercicio */}
-      <Panel className="mt-6 border-dashed bg-transparent">
-        <form action={addExerciseToRoutineAction} className="space-y-3">
-          <input type="hidden" name="routineId" value={id} />
-
-          <Field label="Ejercicio">
-            <Select name="exerciseId" required defaultValue="">
-              <option value="" disabled>
-                Elegir…
-              </option>
-              {exercises.map((ex) => (
-                <option key={ex.id} value={ex.id}>
-                  {ex.muscle_group ? `${ex.muscle_group} — ` : ""}
-                  {ex.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Field label="Series">
-              <Input type="number" name="targetSets" defaultValue={3} min={1} />
-            </Field>
-            <Field label="Reps min">
-              <Input type="number" name="targetRepsMin" defaultValue={8} min={1} />
-            </Field>
-            <Field label="Reps max">
-              <Input
-                type="number"
-                name="targetRepsMax"
-                defaultValue={10}
-                min={1}
-              />
-            </Field>
-            <Field label="Descanso">
-              <Input
-                type="number"
-                name="targetRestSeconds"
-                defaultValue={90}
-                min={0}
-                step={15}
-              />
-            </Field>
-          </div>
-
-          <SubmitButton
-            variant="secondary"
-            className="w-full"
-            pendingLabel="Agregando…"
-          >
-            <PlusIcon width={16} height={16} />
-            Agregar a la rutina
-          </SubmitButton>
-        </form>
-      </Panel>
+      <div className="mt-6 rounded-2xl border border-dashed border-line p-4">
+        <SectionTitle>Agregar ejercicio</SectionTitle>
+        <ExercisePicker
+          exercises={exercises}
+          action={addExerciseToRoutineAction}
+          hiddenFields={{ routineId: id }}
+          withTarget
+        />
+      </div>
 
       {/* Acciones destructivas / secundarias, deliberadamente discretas */}
       <details className="mt-6">
@@ -254,6 +223,28 @@ export default async function RoutineDetailPage({
               Guardar
             </SubmitButton>
           </form>
+
+          {allGroups.length > 0 && (
+            <form action={moveRoutineToGroupAction} className="flex gap-2">
+              <input type="hidden" name="routineId" value={id} />
+              <Select
+                name="groupId"
+                defaultValue={routine.group_id ?? ""}
+                className="flex-1"
+                aria-label="Programa"
+              >
+                <option value="">Sin programa</option>
+                {allGroups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </Select>
+              <SubmitButton variant="secondary" pendingLabel="…">
+                Mover
+              </SubmitButton>
+            </form>
+          )}
 
           <form action={deleteRoutineAction}>
             <input type="hidden" name="routineId" value={id} />

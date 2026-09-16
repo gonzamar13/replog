@@ -9,6 +9,7 @@ import {
   removeRoutineExercise,
   renameRoutine,
   updateRoutineDays,
+  updateRoutineGroup,
 } from "@/lib/data/routines";
 import { createWorkoutFromRoutine } from "@/lib/data/workouts";
 import { revalidatePath } from "next/cache";
@@ -36,6 +37,17 @@ export async function createRoutineGroupAction(formData: FormData) {
     endsOn: endsOnRaw || null,
   });
 
+  revalidatePath("/rutinas");
+}
+
+export async function moveRoutineToGroupAction(formData: FormData) {
+  const routineId = formData.get("routineId") as string;
+  if (!routineId) return;
+
+  const groupId = (formData.get("groupId") as string) || null;
+
+  await updateRoutineGroup(routineId, groupId);
+  revalidatePath(`/rutinas/${routineId}`);
   revalidatePath("/rutinas");
 }
 

@@ -1,6 +1,7 @@
 import { ChevronRightIcon, PlusIcon, RoutinesIcon } from "@/components/icons";
 import {
   Badge,
+  cn,
   EmptyState,
   Field,
   Input,
@@ -8,7 +9,6 @@ import {
   Page,
   PageHeader,
   Panel,
-  SectionTitle,
   Select,
 } from "@/components/ui";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -19,10 +19,18 @@ import {
   listRoutinesGroupedByProgram,
   type Routine,
 } from "@/lib/data/routines";
+import { pickCurrentGroup } from "@/lib/programs";
 import Link from "next/link";
 import { createRoutineAction, createRoutineGroupAction } from "./actions";
 
-type Stats = Map<string, { exerciseCount: number; avgMinutes: number | null }>;
+type Stats = Awaited<ReturnType<typeof getRoutineStats>>;
+
+function shortDate(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 function RoutineRow({ routine, stats }: { routine: Routine; stats: Stats }) {
   const stat = stats.get(routine.id);
@@ -41,7 +49,7 @@ function RoutineRow({ routine, stats }: { routine: Routine; stats: Stats }) {
               stat?.exerciseCount
                 ? `${stat.exerciseCount} ${stat.exerciseCount === 1 ? "ejercicio" : "ejercicios"}`
                 : "Sin ejercicios",
-              stat?.avgMinutes ? `${stat.avgMinutes} min` : null,
+              stat?.typicalMinutes ? `~${stat.typicalMinutes} min` : null,
               formatDays(routine.days),
             ]}
           />
@@ -52,23 +60,105 @@ function RoutineRow({ routine, stats }: { routine: Routine; stats: Stats }) {
   );
 }
 
-export default async function RutinasPage() {
+function FilterChip({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "true" : undefined}
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors",
+        active
+          ? "border-accent/40 bg-accent/10 text-accent"
+          : "border-line text-muted hover:text-ink",
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
+export default async function RutinasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ programa?: string }>;
+}) {
   await requireUser();
+  const { programa } = await searchParams;
+
   const [{ groups, ungrouped }, stats] = await Promise.all([
     listRoutinesGroupedByProgram(),
     getRoutineStats(),
   ]);
 
-  const isEmpty = groups.length === 0 && ungrouped.length === 0;
+  const programs = groups.map((g) => g.group);
+  // Sin selección explícita se abre en el programa vigente por fechas.
+  const current = pickCurrentGroup(programs);
+  const selected = programa ?? current?.id ?? "todas";
+
+  const selectedProgram = programs.find((p) => p.id === selected) ?? null;
+
+  const visible: Routine[] =
+    selected === "todas"
+      ? [...groups.flatMap((g) => g.routines), ...ungrouped]
+      : selected === "sin"
+        ? ungrouped
+        : (groups.find((g) => g.group.id === selected)?.routines ?? []);
+
+  const hasAnything = programs.length > 0 || ungrouped.length > 0;
 
   return (
     <Page>
-      <PageHeader
-        title="Rutinas"
-        subtitle="Tus plantillas de entrenamiento, agrupadas por programa."
-      />
+      <PageHeader title="Rutinas" />
 
-      {isEmpty && (
+      {/* Selector de programa: el vigente arranca elegido, los viejos
+          quedan a un toque sin estorbar el camino diario */}
+      {programs.length > 0 && (
+        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
+          {programs.map((program) => (
+            <FilterChip
+              key={program.id}
+              href={`/rutinas?programa=${program.id}`}
+              active={selected === program.id}
+            >
+              {program.name}
+              {current?.id === program.id && (
+                <span className="text-[10px] uppercase tracking-wide opacity-70">
+                  vigente
+                </span>
+              )}
+            </FilterChip>
+          ))}
+          {ungrouped.length > 0 && (
+            <FilterChip href="/rutinas?programa=sin" active={selected === "sin"}>
+              Sin programa
+            </FilterChip>
+          )}
+          <FilterChip href="/rutinas?programa=todas" active={selected === "todas"}>
+            Todas
+          </FilterChip>
+        </div>
+      )}
+
+      {selectedProgram && (selectedProgram.starts_on || selectedProgram.ends_on) && (
+        <p className="mb-4 text-[13px] text-faint">
+          {selectedProgram.starts_on
+            ? `Desde ${shortDate(selectedProgram.starts_on)}`
+            : "Sin fecha de inicio"}
+          {selectedProgram.ends_on
+            ? ` hasta ${shortDate(selectedProgram.ends_on)}`
+            : ""}
+        </p>
+      )}
+
+      {!hasAnything && (
         <EmptyState
           icon={<RoutinesIcon width={28} height={28} />}
           title="Todavía no tenés rutinas"
@@ -76,50 +166,21 @@ export default async function RutinasPage() {
         />
       )}
 
-      <div className="space-y-7">
-        {groups.map(({ group, routines }) => (
-          <section key={group.id}>
-            <SectionTitle
-              action={
-                group.starts_on ? (
-                  <Badge tone="accent">
-                    desde{" "}
-                    {new Date(`${group.starts_on}T00:00:00`).toLocaleDateString(
-                      "es-AR",
-                      { day: "numeric", month: "short" },
-                    )}
-                  </Badge>
-                ) : undefined
-              }
-            >
-              {group.name}
-            </SectionTitle>
+      {hasAnything && visible.length === 0 && (
+        <p className="rounded-2xl border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+          {selected === "sin"
+            ? "Todas tus rutinas están dentro de un programa."
+            : "Este programa todavía no tiene rutinas."}
+        </p>
+      )}
 
-            {routines.length > 0 ? (
-              <ul className="space-y-2">
-                {routines.map((routine) => (
-                  <RoutineRow key={routine.id} routine={routine} stats={stats} />
-                ))}
-              </ul>
-            ) : (
-              <p className="rounded-2xl border border-dashed border-line px-4 py-5 text-center text-[13px] text-faint">
-                Este programa todavía no tiene rutinas.
-              </p>
-            )}
-          </section>
-        ))}
-
-        {ungrouped.length > 0 && (
-          <section>
-            <SectionTitle>Sin programa</SectionTitle>
-            <ul className="space-y-2">
-              {ungrouped.map((routine) => (
-                <RoutineRow key={routine.id} routine={routine} stats={stats} />
-              ))}
-            </ul>
-          </section>
-        )}
-      </div>
+      {visible.length > 0 && (
+        <ul className="space-y-2">
+          {visible.map((routine) => (
+            <RoutineRow key={routine.id} routine={routine} stats={stats} />
+          ))}
+        </ul>
+      )}
 
       {/* Crear */}
       <Panel className="mt-8 border-dashed bg-transparent">
@@ -133,13 +194,16 @@ export default async function RutinasPage() {
             />
           </Field>
 
-          {groups.length > 0 && (
+          {programs.length > 0 && (
             <Field label="Programa">
-              <Select name="groupId" defaultValue="">
+              <Select
+                name="groupId"
+                defaultValue={selectedProgram?.id ?? ""}
+              >
                 <option value="">Sin programa</option>
-                {groups.map(({ group }) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
+                {programs.map((program) => (
+                  <option key={program.id} value={program.id}>
+                    {program.name}
                   </option>
                 ))}
               </Select>
@@ -174,6 +238,9 @@ export default async function RutinasPage() {
               <Input type="date" name="endsOn" />
             </Field>
           </div>
+          <p className="text-[12px] text-faint">
+            Con fechas, el programa se selecciona solo mientras esté vigente.
+          </p>
           <SubmitButton
             variant="secondary"
             className="w-full"
@@ -183,6 +250,15 @@ export default async function RutinasPage() {
           </SubmitButton>
         </form>
       </details>
+
+      {programs.length > 0 && (
+        <p className="mt-3 text-center">
+          <Badge tone="neutral">
+            {visible.length}{" "}
+            {visible.length === 1 ? "rutina" : "rutinas"} en esta vista
+          </Badge>
+        </p>
+      )}
     </Page>
   );
 }
