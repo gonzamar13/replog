@@ -156,6 +156,24 @@ Aplicarlas: pegarlas en orden en el **SQL Editor** de Supabase, o
 > Vercel **no** corre migraciones. Los `.sql` viajan al repo, pero aplicarlas
 > es un paso manual contra Supabase.
 
+## Importar entrenamientos anteriores a la app
+
+`supabase/import-historico.sql` es una herramienta opcional para cargar
+historial viejo (por ejemplo, el que venía de Google Sheets). Se pegan las
+filas crudas — una por serie — en una tabla de staging y una función las
+convierte en `workouts` / `workout_exercises` / `sets`.
+
+Se encarga de dos detalles que a mano es fácil que salgan mal:
+
+- **`sets.created_at`** se fuerza a la fecha real del entrenamiento: es el
+  campo que la pantalla de Récords usa como fecha del PR.
+- **`workouts.ended_at`** siempre queda seteado: una sesión sin `ended_at`
+  cuenta como *en curso* y la app te metería dentro de ella al tocar
+  "Entrenar".
+
+Las instrucciones están en el propio archivo. Cuando termina la importación,
+conviene borrar la función y la tabla de staging.
+
 ## Preparado para el futuro (sin implementar)
 
 El plan original contemplaba profesores y gimnasios. No están construidos,
