@@ -73,7 +73,12 @@ from (values
   ('Rodillas al pecho', 'Core', false),
   ('Plancha lateral', 'Core', false),
   ('Crunch inverso', 'Core', false),
-  ('Russian twist', 'Core', false)
+  ('Russian twist', 'Core', false),
+  ('Curl femoral sentado', 'Piernas', false),
+  ('Curl femoral parado', 'Piernas', false),
+  ('Curl femoral acostado', 'Piernas', false),
+  ('Press banca declinado', 'Pecho', false),
+  ('Fondos en máquina', 'Pecho', false)
 ) as v(name, muscle_group, is_custom)
 where not exists (
   select 1
